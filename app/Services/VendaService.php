@@ -125,6 +125,11 @@ class VendaService
         return $this->vendas->findByPeriodo($dataInicio, $dataFim, $empresaId);
     }
 
+    public function recibo(int $id): ?Venda
+    {
+        return $this->vendas->findByIdComItens($id);
+    }
+
     public function dashboard(int $empresaId = 0): array
     {
         return [

@@ -45,4 +45,18 @@ class VendaController
             'empresaId'    => $empresaId,
         ]);
     }
+
+    public function recibo(string $id): void
+    {
+        requireLogin();
+
+        $venda = $this->service->recibo((int) $id);
+        if (!$venda) {
+            http_response_code(404);
+            echo 'Venda não encontrada.';
+            return;
+        }
+
+        require BASE_PATH . '/views/vendas/recibo.php';
+    }
 }

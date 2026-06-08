@@ -188,7 +188,10 @@ $saldoEsperado = $caixaResumo['saldo_esperado'] ?? 0.0;
             </div>
             <h4 class="fw-bold mb-1">Venda Finalizada!</h4>
             <p class="text-muted" id="resumoVenda"></p>
-            <button class="btn btn-success btn-lg mt-2" onclick="novaVenda()">
+            <a href="#" target="_blank" class="btn btn-outline-primary btn-lg mt-2 w-100" id="btnImprimirRecibo">
+                <i class="bi bi-printer me-2"></i>Imprimir recibo
+            </a>
+            <button class="btn btn-success btn-lg mt-2 w-100" onclick="novaVenda()">
                 <i class="bi bi-plus-circle me-2"></i>Nova Venda
             </button>
         </div>
@@ -469,6 +472,12 @@ function finalizarVenda() {
     }));
 
     const btn = document.getElementById('btnFinalizar');
+    const reciboWindow = window.open('', '_blank', 'width=360,height=640');
+    if (reciboWindow) {
+        reciboWindow.document.write('<!doctype html><title>Recibo</title><body style="font-family:sans-serif;padding:1rem">Gerando recibo...</body>');
+        reciboWindow.document.close();
+    }
+
     btn.disabled = true;
     btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Processando...';
 
@@ -482,18 +491,26 @@ function finalizarVenda() {
     .then(r => r.json())
     .then(data => {
         if (data.ok) {
+            const reciboUrl = '<?= BASE_URL ?>/vendas/recibo/' + data.venda_id;
+            if (reciboWindow) {
+                reciboWindow.location.href = reciboUrl;
+            }
+            document.getElementById('btnImprimirRecibo').href = reciboUrl;
+
             const troco = Math.max(pago - tot, 0);
             document.getElementById('resumoVenda').innerHTML =
                 `Venda <strong>#${data.venda_id}</strong> — Total: <strong>${fmt(tot)}</strong>` +
                 (forma === 'dinheiro' ? ` — Troco: <strong>${fmt(troco)}</strong>` : '');
             new bootstrap.Modal(document.getElementById('modalSucesso')).show();
         } else {
+            if (reciboWindow) reciboWindow.close();
             alert('Erro: ' + (data.erro || 'Tente novamente.'));
             btn.disabled = false;
             btn.innerHTML = '<i class="bi bi-check-circle me-2"></i>Finalizar Venda';
         }
     })
     .catch(() => {
+        if (reciboWindow) reciboWindow.close();
         alert('Erro de comunicação. Tente novamente.');
         btn.disabled = false;
         btn.innerHTML = '<i class="bi bi-check-circle me-2"></i>Finalizar Venda';

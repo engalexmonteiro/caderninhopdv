@@ -50,6 +50,7 @@ $routes = [
     'POST /pdv/caixa/reforco'         => ['Controllers\\PdvController',       'reforco'],
     'POST /pdv/caixa/fechar'          => ['Controllers\\PdvController',       'fecharCaixa'],
     'GET /vendas'                     => ['Controllers\\VendaController',     'index'],
+    'GET /vendas/recibo/{id}'         => ['Controllers\\VendaController',     'recibo'],
     'GET /empresas'                   => ['Controllers\\EmpresaController',   'index'],
     'GET /empresas/nova'              => ['Controllers\\EmpresaController',   'create'],
     'POST /empresas/nova'             => ['Controllers\\EmpresaController',   'store'],

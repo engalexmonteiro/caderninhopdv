@@ -27,7 +27,10 @@ class VendaRepository
 
         $stmt = $this->pdo->prepare(
             "SELECT v.*, u.nome AS usuario_nome,
-                    e.razao_social AS empresa_nome, e.cnpj AS empresa_cnpj,
+                    e.razao_social AS empresa_nome, e.nome_fantasia AS empresa_fantasia,
+                    e.cnpj AS empresa_cnpj, e.email AS empresa_email, e.telefone AS empresa_telefone,
+                    e.endereco AS empresa_endereco, e.cidade AS empresa_cidade, e.estado AS empresa_estado,
+                    e.cep AS empresa_cep, e.logomarca AS empresa_logomarca,
                     (SELECT COUNT(*) FROM venda_itens vi WHERE vi.venda_id = v.id) AS qtd_itens
              FROM vendas v
              JOIN usuarios u ON u.id = v.usuario_id
@@ -51,7 +54,10 @@ class VendaRepository
 
         $stmt = $this->pdo->prepare(
             "SELECT v.*, u.nome AS usuario_nome,
-                    e.razao_social AS empresa_nome, e.cnpj AS empresa_cnpj
+                    e.razao_social AS empresa_nome, e.nome_fantasia AS empresa_fantasia,
+                    e.cnpj AS empresa_cnpj, e.email AS empresa_email, e.telefone AS empresa_telefone,
+                    e.endereco AS empresa_endereco, e.cidade AS empresa_cidade, e.estado AS empresa_estado,
+                    e.cep AS empresa_cep, e.logomarca AS empresa_logomarca
              FROM vendas v
              JOIN usuarios u ON u.id = v.usuario_id
              LEFT JOIN empresas e ON e.id = v.empresa_id
@@ -87,6 +93,41 @@ class VendaRepository
         $stmt = $this->pdo->prepare("SELECT COUNT(*) FROM vendas WHERE $where");
         $stmt->execute($params);
         return (int) $stmt->fetchColumn();
+    }
+
+    public function findByIdComItens(int $id): ?Venda
+    {
+        $stmt = $this->pdo->prepare(
+            "SELECT v.*, u.nome AS usuario_nome,
+                    e.razao_social AS empresa_nome, e.nome_fantasia AS empresa_fantasia,
+                    e.cnpj AS empresa_cnpj, e.email AS empresa_email, e.telefone AS empresa_telefone,
+                    e.endereco AS empresa_endereco, e.cidade AS empresa_cidade, e.estado AS empresa_estado,
+                    e.cep AS empresa_cep, e.logomarca AS empresa_logomarca
+             FROM vendas v
+             JOIN usuarios u ON u.id = v.usuario_id
+             LEFT JOIN empresas e ON e.id = v.empresa_id
+             WHERE v.id = ?"
+        );
+        $stmt->execute([$id]);
+        $row = $stmt->fetch();
+        if (!$row) {
+            return null;
+        }
+
+        $venda = Venda::fromArray($row);
+
+        $stmt = $this->pdo->prepare(
+            "SELECT vi.produto_id, p.codigo_barras AS produto_codigo, p.descricao AS produto_nome,
+                    vi.quantidade, vi.preco_unitario, vi.subtotal
+             FROM venda_itens vi
+             JOIN produtos p ON p.id = vi.produto_id
+             WHERE vi.venda_id = ?
+             ORDER BY vi.id ASC"
+        );
+        $stmt->execute([$id]);
+        $venda->itens = array_map([VendaItem::class, 'fromArray'], $stmt->fetchAll());
+
+        return $venda;
     }
 
     public function save(Venda $venda): int
