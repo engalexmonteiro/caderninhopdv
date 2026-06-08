@@ -5,10 +5,10 @@
  * Depois apague este arquivo.
  */
 
-$host = 'localhost';
-$user = 'root';
-$pass = '';
-$name = 'pdv';
+$host = getenv('DB_HOST') ?: 'localhost';
+$user = getenv('DB_USER') ?: 'root';
+$pass = getenv('DB_PASS') ?: '';
+$name = getenv('DB_NAME') ?: 'pdv';
 
 try {
     $pdo = new PDO("mysql:host=$host;charset=utf8mb4", $user, $pass, [

@@ -1,0 +1,34 @@
+services:
+  app:
+    build: .
+    ports:
+      - "8080:80"
+    environment:
+      DB_HOST: db
+      DB_USER: root
+      DB_PASS: root
+      DB_NAME: pdv
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes:
+      - .:/var/www/html
+
+  db:
+    image: mysql:8.0
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: pdv
+    ports:
+      - "3306:3306"
+    volumes:
+      - db_data:/var/lib/mysql
+      - ./db.sql:/docker-entrypoint-initdb.d/db.sql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-proot"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  db_data:
