@@ -37,6 +37,23 @@ CREATE TABLE tipos_pagamento (
     criado_em DATETIME DEFAULT CURRENT_TIMESTAMP
 );
 
+CREATE TABLE categorias_produto (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    nome VARCHAR(150) NOT NULL UNIQUE,
+    ativo TINYINT(1) NOT NULL DEFAULT 1,
+    criado_em DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE subcategorias_produto (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    categoria_id INT NOT NULL,
+    nome VARCHAR(150) NOT NULL,
+    ativo TINYINT(1) NOT NULL DEFAULT 1,
+    criado_em DATETIME DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE KEY uq_subcategoria_categoria_nome (categoria_id, nome),
+    FOREIGN KEY (categoria_id) REFERENCES categorias_produto(id)
+);
+
 CREATE TABLE produtos (
     id INT AUTO_INCREMENT PRIMARY KEY,
     codigo_barras VARCHAR(50) NOT NULL UNIQUE,

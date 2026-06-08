@@ -53,13 +53,45 @@ $numberValue = fn (float $value): string => rtrim(rtrim(number_format($value, 3,
                     </div>
                     <div class="col-md-6">
                         <label class="form-label fw-semibold">Categoria do Produto</label>
-                        <input type="text" name="categoria_produto" class="form-control"
-                               value="<?= e($produto->categoriaProduto) ?>">
+                        <select name="categoria_produto" class="form-select" id="categoriaProduto">
+                            <option value="">Selecione...</option>
+                            <?php
+                            $categoriaSelecionada = false;
+                            foreach ($categorias ?? [] as $categoria):
+                                $selected = $produto->categoriaProduto === $categoria->nome;
+                                $categoriaSelecionada = $categoriaSelecionada || $selected;
+                            ?>
+                            <option value="<?= e($categoria->nome) ?>" <?= $selected ? 'selected' : '' ?>>
+                                <?= e($categoria->nome) ?>
+                            </option>
+                            <?php endforeach; ?>
+                            <?php if ($produto->categoriaProduto !== '' && !$categoriaSelecionada): ?>
+                            <option value="<?= e($produto->categoriaProduto) ?>" selected><?= e($produto->categoriaProduto) ?></option>
+                            <?php endif; ?>
+                        </select>
                     </div>
                     <div class="col-md-6">
                         <label class="form-label fw-semibold">Subcategoria do Produto</label>
-                        <input type="text" name="subcategoria_produto" class="form-control"
-                               value="<?= e($produto->subcategoriaProduto) ?>">
+                        <select name="subcategoria_produto" class="form-select" id="subcategoriaProduto">
+                            <option value="">Selecione...</option>
+                            <?php
+                            $subcategoriaSelecionada = false;
+                            foreach ($subcategorias ?? [] as $subcategoria):
+                                $selected = $produto->subcategoriaProduto === $subcategoria->nome;
+                                $subcategoriaSelecionada = $subcategoriaSelecionada || $selected;
+                            ?>
+                            <option value="<?= e($subcategoria->nome) ?>"
+                                    data-categoria="<?= e($subcategoria->categoriaNome) ?>"
+                                    <?= $selected ? 'selected' : '' ?>>
+                                <?= e($subcategoria->categoriaNome) ?> / <?= e($subcategoria->nome) ?>
+                            </option>
+                            <?php endforeach; ?>
+                            <?php if ($produto->subcategoriaProduto !== '' && !$subcategoriaSelecionada): ?>
+                            <option value="<?= e($produto->subcategoriaProduto) ?>" data-categoria="<?= e($produto->categoriaProduto) ?>" selected>
+                                <?= e($produto->subcategoriaProduto) ?>
+                            </option>
+                            <?php endif; ?>
+                        </select>
                     </div>
                     <div class="col-md-4">
                         <label class="form-label fw-semibold">Marca</label>
@@ -202,3 +234,26 @@ $numberValue = fn (float $value): string => rtrim(rtrim(number_format($value, 3,
         </div>
     </form>
 </div>
+
+<script>
+const categoriaProduto = document.getElementById('categoriaProduto');
+const subcategoriaProduto = document.getElementById('subcategoriaProduto');
+
+function filtrarSubcategorias() {
+    const categoria = categoriaProduto.value;
+    [...subcategoriaProduto.options].forEach(option => {
+        if (option.value === '') {
+            option.hidden = false;
+            return;
+        }
+        const matches = !categoria || option.dataset.categoria === categoria;
+        option.hidden = !matches;
+        if (!matches && option.selected) {
+            subcategoriaProduto.value = '';
+        }
+    });
+}
+
+categoriaProduto.addEventListener('change', filtrarSubcategorias);
+filtrarSubcategorias();
+</script>

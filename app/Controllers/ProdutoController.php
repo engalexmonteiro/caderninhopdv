@@ -3,16 +3,29 @@
 namespace App\Controllers;
 
 use App\Models\Produto;
+use App\Repositories\CategoriaProdutoRepository;
 use App\Repositories\ProdutoRepository;
+use App\Repositories\SubcategoriaProdutoRepository;
+use App\Services\CategoriaProdutoService;
 use App\Services\ProdutoService;
+use App\Services\SubcategoriaProdutoService;
 
 class ProdutoController
 {
     private ProdutoService $service;
+    private CategoriaProdutoService $categoriaService;
+    private SubcategoriaProdutoService $subcategoriaService;
 
     public function __construct()
     {
-        $this->service = new ProdutoService(new ProdutoRepository(getDB()));
+        $pdo = getDB();
+        $categoriaRepo = new CategoriaProdutoRepository($pdo);
+        $this->service = new ProdutoService(new ProdutoRepository($pdo));
+        $this->categoriaService = new CategoriaProdutoService($categoriaRepo);
+        $this->subcategoriaService = new SubcategoriaProdutoService(
+            new SubcategoriaProdutoRepository($pdo),
+            $categoriaRepo
+        );
     }
 
     public function index(): void
@@ -37,6 +50,8 @@ class ProdutoController
         render('produtos/form', [
             'pageTitle' => 'Novo Produto',
             'produto'   => new Produto(),
+            'categorias' => $this->categoriaService->listarAtivas(),
+            'subcategorias' => $this->subcategoriaService->listarAtivas(),
             'errors'    => [],
         ]);
     }
@@ -53,6 +68,8 @@ class ProdutoController
             render('produtos/form', [
                 'pageTitle' => 'Novo Produto',
                 'produto'   => $produto,
+                'categorias' => $this->categoriaService->listarAtivas(),
+                'subcategorias' => $this->subcategoriaService->listarAtivas(),
                 'errors'    => $result['errors'],
             ]);
             return;
@@ -73,6 +90,8 @@ class ProdutoController
         render('produtos/form', [
             'pageTitle' => 'Editar Produto',
             'produto'   => $produto,
+            'categorias' => $this->categoriaService->listarAtivas(),
+            'subcategorias' => $this->subcategoriaService->listarAtivas(),
             'errors'    => [],
         ]);
     }
@@ -89,6 +108,8 @@ class ProdutoController
             render('produtos/form', [
                 'pageTitle' => 'Editar Produto',
                 'produto'   => $produto,
+                'categorias' => $this->categoriaService->listarAtivas(),
+                'subcategorias' => $this->subcategoriaService->listarAtivas(),
                 'errors'    => $result['errors'],
             ]);
             return;

@@ -48,6 +48,10 @@
                 <?php
                 $cadastroItems = ['/produtos' => ['bi-box-seam', 'Produtos']];
                 $financeiroItems = [];
+                $produtoConfigItems = [
+                    '/produtos/categorias' => ['bi-tags', 'Categorias de Produtos'],
+                    '/produtos/subcategorias' => ['bi-diagram-2', 'Subcategorias de Produtos'],
+                ];
                 if (isAdmin()) {
                     $cadastroItems['/usuarios'] = ['bi-people',   'Usuários'];
                     $cadastroItems['/empresas'] = ['bi-building', 'Empresas'];
