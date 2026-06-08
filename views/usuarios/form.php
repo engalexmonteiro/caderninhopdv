@@ -4,7 +4,7 @@
             <i class="bi bi-person-<?= $usuario->id > 0 ? 'gear' : 'plus' ?> me-2 text-primary"></i>
             <?= e($pageTitle) ?>
         </h4>
-        <a href="/usuarios" class="btn btn-outline-secondary btn-sm">
+        <a href="<?= BASE_URL ?>/usuarios" class="btn btn-outline-secondary btn-sm">
             <i class="bi bi-arrow-left me-1"></i>Voltar
         </a>
     </div>
@@ -23,7 +23,7 @@
     <div class="card">
         <div class="card-body">
             <form method="POST"
-                  action="<?= $usuario->id > 0 ? '/usuarios/editar/' . $usuario->id : '/usuarios/novo' ?>"
+                  action="<?= BASE_URL . ($usuario->id > 0 ? '/usuarios/editar/' . $usuario->id : '/usuarios/novo') ?>"
                   novalidate>
                 <div class="row g-3">
                     <div class="col-12">
@@ -66,7 +66,7 @@
                 </div>
                 <hr>
                 <div class="d-flex gap-2 justify-content-end">
-                    <a href="/usuarios" class="btn btn-outline-secondary">Cancelar</a>
+                    <a href="<?= BASE_URL ?>/usuarios" class="btn btn-outline-secondary">Cancelar</a>
                     <button type="submit" class="btn btn-primary">
                         <i class="bi bi-check-lg me-1"></i>Salvar Usuário
                     </button>

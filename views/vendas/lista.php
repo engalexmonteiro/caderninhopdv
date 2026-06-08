@@ -3,7 +3,7 @@
 
     <div class="card mb-4">
         <div class="card-body py-3">
-            <form method="GET" action="/vendas" class="row g-2 align-items-end">
+            <form method="GET" action="<?= BASE_URL ?>/vendas" class="row g-2 align-items-end">
                 <div class="col-md-3">
                     <label class="form-label small fw-semibold mb-1">De</label>
                     <input type="date" name="de" class="form-control" value="<?= e($dataInicio) ?>">

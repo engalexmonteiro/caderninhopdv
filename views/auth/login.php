@@ -12,7 +12,7 @@
         </div>
         <?php endif; ?>
 
-        <form method="POST" action="/login" novalidate>
+        <form method="POST" action="<?= BASE_URL ?>/login" novalidate>
             <div class="mb-3">
                 <label class="form-label fw-semibold">E-mail</label>
                 <div class="input-group">

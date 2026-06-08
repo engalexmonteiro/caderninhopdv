@@ -2,7 +2,7 @@
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h4 class="mb-0 fw-bold"><i class="bi bi-box-seam me-2 text-primary"></i>Produtos</h4>
         <?php if (isAdmin()): ?>
-        <a href="/produtos/novo" class="btn btn-primary">
+        <a href="<?= BASE_URL ?>/produtos/novo" class="btn btn-primary">
             <i class="bi bi-plus-lg me-1"></i>Novo Produto
         </a>
         <?php endif; ?>
@@ -17,12 +17,12 @@
 
     <div class="card mb-4">
         <div class="card-body py-3">
-            <form method="GET" action="/produtos" class="d-flex gap-2">
+            <form method="GET" action="<?= BASE_URL ?>/produtos" class="d-flex gap-2">
                 <input type="text" name="q" value="<?= e($busca) ?>"
                        class="form-control" placeholder="Buscar por nome ou código...">
                 <button class="btn btn-outline-primary" type="submit"><i class="bi bi-search"></i></button>
                 <?php if ($busca !== ''): ?>
-                <a href="/produtos" class="btn btn-outline-secondary"><i class="bi bi-x-lg"></i></a>
+                <a href="<?= BASE_URL ?>/produtos" class="btn btn-outline-secondary"><i class="bi bi-x-lg"></i></a>
                 <?php endif; ?>
             </form>
         </div>
@@ -63,15 +63,15 @@
                             </td>
                             <?php if (isAdmin()): ?>
                             <td class="text-center">
-                                <a href="/produtos/editar/<?= $p->id ?>" class="btn btn-sm btn-outline-primary me-1" title="Editar">
+                                <a href="<?= BASE_URL ?>/produtos/editar/<?= $p->id ?>" class="btn btn-sm btn-outline-primary me-1" title="Editar">
                                     <i class="bi bi-pencil"></i>
                                 </a>
-                                <a href="/produtos/toggle/<?= $p->id ?>"
+                                <a href="<?= BASE_URL ?>/produtos/toggle/<?= $p->id ?>"
                                    class="btn btn-sm btn-outline-<?= $p->ativo ? 'warning' : 'success' ?> me-1"
                                    title="<?= $p->ativo ? 'Desativar' : 'Ativar' ?>">
                                     <i class="bi bi-toggle-<?= $p->ativo ? 'on' : 'off' ?>"></i>
                                 </a>
-                                <a href="/produtos/excluir/<?= $p->id ?>"
+                                <a href="<?= BASE_URL ?>/produtos/excluir/<?= $p->id ?>"
                                    class="btn btn-sm btn-outline-danger"
                                    onclick="return confirm('Excluir este produto?')" title="Excluir">
                                     <i class="bi bi-trash"></i>

@@ -6,7 +6,7 @@
     <title><?= e($pageTitle ?? 'PDV Sistema') ?> — PDV Sistema</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
-    <link rel="stylesheet" href="/assets/style.css">
+    <link rel="stylesheet" href="<?= BASE_URL ?>/assets/style.css">
 </head>
 <body>
 
@@ -14,7 +14,7 @@
 <?php $__currentPage = basename(parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH)); ?>
 <nav class="navbar navbar-expand-lg navbar-dark bg-primary shadow-sm">
     <div class="container-fluid">
-        <a class="navbar-brand fw-bold" href="/dashboard">
+        <a class="navbar-brand fw-bold" href="<?= BASE_URL ?>/dashboard">
             <i class="bi bi-shop-window me-2"></i>PDV Sistema
         </a>
         <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navMain">
@@ -32,12 +32,14 @@
                     $navItems['/usuarios'] = ['bi-people',  'Usuários'];
                     $navItems['/vendas']   = ['bi-receipt', 'Vendas'];
                 }
-                $uri = rtrim(parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH), '/') ?: '/';
+                $fullUri = rtrim(parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH), '/') ?: '/';
+                $uri = BASE_URL && str_starts_with($fullUri, BASE_URL) ? substr($fullUri, strlen(BASE_URL)) : $fullUri;
+                $uri = $uri ?: '/';
                 foreach ($navItems as $href => [$icon, $label]):
                     $active = str_starts_with($uri, $href) ? 'active' : '';
                 ?>
                 <li class="nav-item">
-                    <a class="nav-link <?= $active ?>" href="<?= $href ?>">
+                    <a class="nav-link <?= $active ?>" href="<?= BASE_URL . $href ?>">
                         <i class="bi <?= $icon ?> me-1"></i><?= $label ?>
                     </a>
                 </li>
@@ -54,7 +56,7 @@
                     </a>
                     <ul class="dropdown-menu dropdown-menu-end">
                         <li>
-                            <a class="dropdown-item" href="/logout">
+                            <a class="dropdown-item" href="<?= BASE_URL ?>/logout">
                                 <i class="bi bi-box-arrow-right me-2"></i>Sair
                             </a>
                         </li>

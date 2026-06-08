@@ -18,7 +18,7 @@ function redirect(string $path, string $flashKey = '', string $flashMsg = ''): n
     if ($flashKey !== '' && $flashMsg !== '') {
         $_SESSION['flash'][$flashKey] = $flashMsg;
     }
-    header('Location: ' . $path);
+    header('Location: ' . BASE_URL . $path);
     exit;
 }
 

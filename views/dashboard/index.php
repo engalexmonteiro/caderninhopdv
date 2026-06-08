@@ -9,7 +9,7 @@
 
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h4 class="mb-0 fw-bold"><i class="bi bi-speedometer2 me-2 text-primary"></i>Dashboard</h4>
-        <a href="/pdv" class="btn btn-success btn-lg">
+        <a href="<?= BASE_URL ?>/pdv" class="btn btn-success btn-lg">
             <i class="bi bi-cart3 me-2"></i>Abrir PDV
         </a>
     </div>
@@ -67,7 +67,7 @@
         <div class="card-header bg-white d-flex justify-content-between align-items-center py-3">
             <span class="fw-bold"><i class="bi bi-receipt me-2 text-primary"></i>Últimas Vendas</span>
             <?php if (isAdmin()): ?>
-            <a href="/vendas" class="btn btn-sm btn-outline-primary">Ver todas</a>
+            <a href="<?= BASE_URL ?>/vendas" class="btn btn-sm btn-outline-primary">Ver todas</a>
             <?php endif; ?>
         </div>
         <div class="card-body p-0">

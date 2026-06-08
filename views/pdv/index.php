@@ -224,7 +224,7 @@ function finalizarVenda() {
     btn.disabled = true;
     btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Processando...';
 
-    fetch('/pdv/finalizar', {
+    fetch('<?= BASE_URL ?>/pdv/finalizar', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ itens, desconto: desc, forma_pagamento: forma, valor_pago: pago, total: tot })

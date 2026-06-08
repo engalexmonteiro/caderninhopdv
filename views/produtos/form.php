@@ -4,7 +4,7 @@
             <i class="bi bi-<?= $produto->id > 0 ? 'pencil' : 'plus-circle' ?> me-2 text-primary"></i>
             <?= e($pageTitle) ?>
         </h4>
-        <a href="/produtos" class="btn btn-outline-secondary btn-sm">
+        <a href="<?= BASE_URL ?>/produtos" class="btn btn-outline-secondary btn-sm">
             <i class="bi bi-arrow-left me-1"></i>Voltar
         </a>
     </div>
@@ -23,7 +23,7 @@
     <div class="card">
         <div class="card-body">
             <form method="POST"
-                  action="<?= $produto->id > 0 ? '/produtos/editar/' . $produto->id : '/produtos/novo' ?>"
+                  action="<?= BASE_URL . ($produto->id > 0 ? '/produtos/editar/' . $produto->id : '/produtos/novo') ?>"
                   novalidate>
                 <div class="row g-3">
                     <div class="col-md-4">
@@ -81,7 +81,7 @@
                 </div>
                 <hr>
                 <div class="d-flex gap-2 justify-content-end">
-                    <a href="/produtos" class="btn btn-outline-secondary">Cancelar</a>
+                    <a href="<?= BASE_URL ?>/produtos" class="btn btn-outline-secondary">Cancelar</a>
                     <button type="submit" class="btn btn-primary">
                         <i class="bi bi-check-lg me-1"></i>Salvar Produto
                     </button>

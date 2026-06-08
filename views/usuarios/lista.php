@@ -1,7 +1,7 @@
 <div class="container-fluid py-4">
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h4 class="mb-0 fw-bold"><i class="bi bi-people me-2 text-primary"></i>Usuários</h4>
-        <a href="/usuarios/novo" class="btn btn-primary">
+        <a href="<?= BASE_URL ?>/usuarios/novo" class="btn btn-primary">
             <i class="bi bi-plus-lg me-1"></i>Novo Usuário
         </a>
     </div>
@@ -43,12 +43,12 @@
                                 </span>
                             </td>
                             <td class="text-center">
-                                <a href="/usuarios/editar/<?= $u->id ?>"
+                                <a href="<?= BASE_URL ?>/usuarios/editar/<?= $u->id ?>"
                                    class="btn btn-sm btn-outline-primary me-1" title="Editar">
                                     <i class="bi bi-pencil"></i>
                                 </a>
                                 <?php if ($u->id !== auth()['id']): ?>
-                                <a href="/usuarios/toggle/<?= $u->id ?>"
+                                <a href="<?= BASE_URL ?>/usuarios/toggle/<?= $u->id ?>"
                                    class="btn btn-sm btn-outline-<?= $u->ativo ? 'warning' : 'success' ?>"
                                    title="<?= $u->ativo ? 'Desativar' : 'Ativar' ?>">
                                     <i class="bi bi-toggle-<?= $u->ativo ? 'on' : 'off' ?>"></i>

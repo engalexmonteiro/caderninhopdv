@@ -16,6 +16,7 @@ require BASE_PATH . '/app/helpers.php';
 $method = $_SERVER['REQUEST_METHOD'];
 $uri    = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
 $base   = rtrim(dirname($_SERVER['SCRIPT_NAME']), '/');
+define('BASE_URL', $base);
 if ($base && str_starts_with($uri, $base)) {
     $uri = substr($uri, strlen($base));
 }
