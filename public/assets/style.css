@@ -1,0 +1,78 @@
+body {
+    background-color: #f4f6f9;
+    font-family: 'Segoe UI', sans-serif;
+}
+
+.navbar-brand { font-size: 1.3rem; letter-spacing: .5px; }
+
+.card { border: none; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,.08); }
+.card-header { border-radius: 12px 12px 0 0 !important; font-weight: 600; }
+
+.table th {
+    font-size: .8rem; text-transform: uppercase;
+    letter-spacing: .5px; color: #6c757d;
+    font-weight: 600; border-bottom: 2px solid #dee2e6;
+}
+.table td { vertical-align: middle; }
+
+/* Login */
+.login-wrapper {
+    min-height: 100vh; display: flex;
+    align-items: center; justify-content: center;
+    background: linear-gradient(135deg, #0d6efd 0%, #0a58ca 100%);
+}
+.login-card { width: 100%; max-width: 420px; border-radius: 16px !important; padding: 2rem; }
+.login-logo { font-size: 3rem; color: #0d6efd; }
+
+/* Dashboard stats */
+.stat-card { border-radius: 12px; color: #fff; padding: 1.5rem; }
+.stat-card .stat-icon { font-size: 2.5rem; opacity: .8; }
+.stat-card .stat-value { font-size: 2rem; font-weight: 700; line-height: 1; }
+.stat-card .stat-label { opacity: .85; font-size: .9rem; }
+
+/* PDV */
+.pdv-wrapper {
+    display: grid;
+    grid-template-columns: 1fr 400px;
+    gap: 1rem;
+    height: calc(100vh - 70px);
+    padding: 1rem;
+}
+.pdv-products { overflow-y: auto; }
+.pdv-cart {
+    display: flex; flex-direction: column;
+    background: #fff; border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0,0,0,.08); overflow: hidden;
+}
+.pdv-cart-header { background: #0d6efd; color: #fff; padding: 1rem 1.25rem; font-weight: 700; font-size: 1.1rem; }
+.pdv-cart-items { flex: 1; overflow-y: auto; padding: .5rem; }
+.pdv-cart-item {
+    display: flex; align-items: center; gap: .5rem;
+    padding: .6rem .5rem; border-bottom: 1px solid #f0f0f0; font-size: .9rem;
+}
+.pdv-cart-item:last-child { border-bottom: none; }
+.pdv-cart-item .item-name { flex: 1; font-weight: 500; }
+.pdv-cart-footer { padding: 1rem 1.25rem; border-top: 2px solid #dee2e6; background: #f8f9fa; }
+.pdv-total { font-size: 2rem; font-weight: 800; color: #198754; text-align: right; }
+
+.product-card {
+    cursor: pointer; transition: transform .15s, box-shadow .15s;
+    border-radius: 10px !important; border: 2px solid transparent !important;
+}
+.product-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 18px rgba(13,110,253,.15) !important;
+    border-color: #0d6efd !important;
+}
+.product-card .product-price { font-size: 1.2rem; font-weight: 700; color: #198754; }
+.product-card .product-stock { font-size: .75rem; color: #6c757d; }
+
+#searchProduto { font-size: 1.1rem; padding: .75rem 1rem; }
+
+.badge-admin   { background-color: #ffc107; color: #000; }
+.badge-usuario { background-color: #0dcaf0; color: #000; }
+
+@media (max-width: 992px) {
+    .pdv-wrapper { grid-template-columns: 1fr; height: auto; }
+    .pdv-cart { order: -1; }
+}
