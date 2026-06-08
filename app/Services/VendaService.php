@@ -25,7 +25,8 @@ class VendaService
         float  $desconto,
         string $formaPagamento,
         float  $valorPago,
-        int    $usuarioId
+        int    $usuarioId,
+        int    $empresaId = 0
     ): array {
         if (empty($itensInput)) {
             return ['ok' => false, 'venda_id' => 0, 'erro' => 'Carrinho vazio.'];
@@ -52,7 +53,7 @@ class VendaService
 
             $produto = $produtos[$id];
 
-            if ($produto->estoque < $qty) {
+            if ($produto->movimentaEstoque && $produto->estoque < $qty) {
                 return [
                     'ok'       => false,
                     'venda_id' => 0,
@@ -83,10 +84,14 @@ class VendaService
             return ['ok' => false, 'venda_id' => 0, 'erro' => 'Valor pago insuficiente.'];
         }
 
-        // Deduzir estoque de cada produto
+        // Deduzir estoque de produtos que controlam quantidade.
         foreach ($itens as $item) {
-            $ok = $this->produtos->decrementarEstoque($item->produtoId, $item->quantidade);
-            if (!$ok) {
+            $produto = $produtos[$item->produtoId] ?? null;
+            if ($produto && !$produto->movimentaEstoque) {
+                continue;
+            }
+
+            if (!$this->produtos->decrementarEstoque($item->produtoId, $item->quantidade)) {
                 return [
                     'ok'       => false,
                     'venda_id' => 0,
@@ -97,6 +102,7 @@ class VendaService
 
         $venda                = new Venda();
         $venda->usuarioId     = $usuarioId;
+        $venda->empresaId     = $empresaId;
         $venda->total         = $total;
         $venda->desconto      = $desconto;
         $venda->formaPagamento = $formaPagamento;
@@ -112,17 +118,17 @@ class VendaService
         }
     }
 
-    public function relatorio(string $dataInicio, string $dataFim): array
+    public function relatorio(string $dataInicio, string $dataFim, int $empresaId = 0): array
     {
-        return $this->vendas->findByPeriodo($dataInicio, $dataFim);
+        return $this->vendas->findByPeriodo($dataInicio, $dataFim, $empresaId);
     }
 
-    public function dashboard(): array
+    public function dashboard(int $empresaId = 0): array
     {
         return [
-            'total_hoje'  => $this->vendas->totalHoje(),
-            'count_hoje'  => $this->vendas->countHoje(),
-            'recentes'    => $this->vendas->findRecentes(10),
+            'total_hoje'  => $this->vendas->totalHoje($empresaId),
+            'count_hoje'  => $this->vendas->countHoje($empresaId),
+            'recentes'    => $this->vendas->findRecentes(10, $empresaId),
         ];
     }
 }

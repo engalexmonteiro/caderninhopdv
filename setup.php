@@ -1,11 +1,10 @@
 <?php
 /**
- * Script de instalação do PDV.
- * Acesse UMA VEZ pelo navegador: http://localhost/setup.php
- * Depois APAGUE este arquivo.
+ * Script de instalacao do PDV.
+ * Acesse uma vez pelo navegador: http://localhost/caderninhopdv/setup.php
+ * Depois apague este arquivo.
  */
 
-// Configuração direta (sem require para facilitar execução inicial)
 $host = 'localhost';
 $user = 'root';
 $pass = '';
@@ -16,11 +15,25 @@ try {
         PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
     ]);
 
-    // Criar banco
     $pdo->exec("CREATE DATABASE IF NOT EXISTS `$name` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci");
     $pdo->exec("USE `$name`");
 
-    // Tabelas
+    $pdo->exec("CREATE TABLE IF NOT EXISTS empresas (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        razao_social VARCHAR(200) NOT NULL,
+        nome_fantasia VARCHAR(200) NOT NULL DEFAULT '',
+        cnpj VARCHAR(14) NOT NULL UNIQUE,
+        email VARCHAR(150) NOT NULL DEFAULT '',
+        telefone VARCHAR(20) NOT NULL DEFAULT '',
+        endereco VARCHAR(200) NOT NULL DEFAULT '',
+        cidade VARCHAR(100) NOT NULL DEFAULT '',
+        estado VARCHAR(2) NOT NULL DEFAULT '',
+        cep VARCHAR(8) NOT NULL DEFAULT '',
+        logomarca VARCHAR(255) NOT NULL DEFAULT '',
+        ativo TINYINT(1) NOT NULL DEFAULT 1,
+        criado_em DATETIME DEFAULT CURRENT_TIMESTAMP
+    )");
+
     $pdo->exec("CREATE TABLE IF NOT EXISTS usuarios (
         id INT AUTO_INCREMENT PRIMARY KEY,
         nome VARCHAR(100) NOT NULL,
@@ -33,20 +46,52 @@ try {
 
     $pdo->exec("CREATE TABLE IF NOT EXISTS produtos (
         id INT AUTO_INCREMENT PRIMARY KEY,
-        codigo VARCHAR(50) NOT NULL UNIQUE,
-        nome VARCHAR(150) NOT NULL,
-        descricao TEXT,
+        codigo_barras VARCHAR(50) NOT NULL UNIQUE,
+        tipo_produto VARCHAR(50) NOT NULL DEFAULT 'Produto',
+        descricao VARCHAR(255) NOT NULL,
         preco_custo DECIMAL(10,2) NOT NULL DEFAULT 0.00,
-        preco_venda DECIMAL(10,2) NOT NULL DEFAULT 0.00,
-        estoque INT NOT NULL DEFAULT 0,
-        unidade VARCHAR(10) NOT NULL DEFAULT 'UN',
+        preco_venda_varejo DECIMAL(10,2) NOT NULL DEFAULT 0.00,
+        preco_venda_atacado DECIMAL(10,2) NOT NULL DEFAULT 0.00,
+        quantidade_minima_atacado INT NOT NULL DEFAULT 0,
+        unidade VARCHAR(30) NOT NULL DEFAULT 'Unidade',
         ativo TINYINT(1) NOT NULL DEFAULT 1,
+        categoria_produto VARCHAR(150) NOT NULL DEFAULT '',
+        subcategoria_produto VARCHAR(150) NOT NULL DEFAULT '',
+        movimenta_estoque TINYINT(1) NOT NULL DEFAULT 0,
+        estoque_minimo INT NOT NULL DEFAULT 0,
+        quantidade_estoque INT NOT NULL DEFAULT 0,
+        marca VARCHAR(100) NOT NULL DEFAULT '',
+        modelo VARCHAR(100) NOT NULL DEFAULT '',
+        codigo_balanca VARCHAR(50) NOT NULL DEFAULT '',
+        codigo_interno VARCHAR(50) NOT NULL DEFAULT '',
+        tags TEXT NULL,
+        tipo VARCHAR(80) NOT NULL DEFAULT '',
+        ncm VARCHAR(20) NOT NULL DEFAULT '',
+        cfop VARCHAR(20) NOT NULL DEFAULT '',
+        origem VARCHAR(80) NOT NULL DEFAULT '',
+        cest VARCHAR(20) NOT NULL DEFAULT '',
+        categoria_pdv VARCHAR(150) NOT NULL DEFAULT '',
+        botao_pdv TINYINT(1) NOT NULL DEFAULT 0,
+        categoria_loja_virtual VARCHAR(150) NOT NULL DEFAULT '',
+        subcategoria_loja_virtual VARCHAR(150) NOT NULL DEFAULT '',
+        nome_loja_virtual VARCHAR(200) NOT NULL DEFAULT '',
+        preco_de DECIMAL(10,2) NOT NULL DEFAULT 0.00,
+        preco_por DECIMAL(10,2) NOT NULL DEFAULT 0.00,
+        altura_cm DECIMAL(10,2) NOT NULL DEFAULT 0.00,
+        largura_cm DECIMAL(10,2) NOT NULL DEFAULT 0.00,
+        profundidade_cm DECIMAL(10,2) NOT NULL DEFAULT 0.00,
+        peso_kg DECIMAL(10,3) NOT NULL DEFAULT 0.000,
+        descricao_produto TEXT NULL,
+        garantia TEXT NULL,
+        itens_inclusos TEXT NULL,
+        especificacoes TEXT NULL,
         criado_em DATETIME DEFAULT CURRENT_TIMESTAMP
     )");
 
     $pdo->exec("CREATE TABLE IF NOT EXISTS vendas (
         id INT AUTO_INCREMENT PRIMARY KEY,
         usuario_id INT NOT NULL,
+        empresa_id INT NULL,
         total DECIMAL(10,2) NOT NULL DEFAULT 0.00,
         desconto DECIMAL(10,2) NOT NULL DEFAULT 0.00,
         forma_pagamento ENUM('dinheiro','cartao_credito','cartao_debito','pix') NOT NULL DEFAULT 'dinheiro',
@@ -54,7 +99,8 @@ try {
         troco DECIMAL(10,2) NOT NULL DEFAULT 0.00,
         status ENUM('concluida','cancelada') NOT NULL DEFAULT 'concluida',
         criado_em DATETIME DEFAULT CURRENT_TIMESTAMP,
-        FOREIGN KEY (usuario_id) REFERENCES usuarios(id)
+        FOREIGN KEY (usuario_id) REFERENCES usuarios(id),
+        FOREIGN KEY (empresa_id) REFERENCES empresas(id)
     )");
 
     $pdo->exec("CREATE TABLE IF NOT EXISTS venda_itens (
@@ -68,79 +114,77 @@ try {
         FOREIGN KEY (produto_id) REFERENCES produtos(id)
     )");
 
-    // Admin padrão
     $adminEmail = 'admin@pdv.com';
     $adminSenha = 'admin123';
     $chk = $pdo->prepare('SELECT id FROM usuarios WHERE email = ?');
     $chk->execute([$adminEmail]);
     if (!$chk->fetch()) {
         $hash = password_hash($adminSenha, PASSWORD_DEFAULT);
-        $ins  = $pdo->prepare('INSERT INTO usuarios (nome, email, senha, perfil) VALUES (?,?,?,?)');
+        $ins = $pdo->prepare('INSERT INTO usuarios (nome, email, senha, perfil) VALUES (?,?,?,?)');
         $ins->execute(['Administrador', $adminEmail, $hash, 'admin']);
         $adminCriado = true;
     } else {
         $adminCriado = false;
     }
 
-    // Produtos de exemplo
     $produtos = [
-        ['001', 'Coca-Cola 350ml',    'Refrigerante lata 350ml', 2.50, 5.00,  100, 'UN'],
-        ['002', 'Água Mineral 500ml', 'Água s/ gás 500ml',       0.80, 2.50,  200, 'UN'],
-        ['003', 'Pão Francês',        'Pão francês unidade',      0.50, 1.00,   50, 'UN'],
-        ['004', 'Café Expresso',      'Café expresso curto',      1.00, 4.00,  999, 'UN'],
-        ['005', 'Salgado Assado',     'Salgado assado variado',   2.00, 5.00,   30, 'UN'],
+        ['001', 'Produto', 'Coca-Cola 350ml', 2.50, 5.00, 'Unidade', 1, 1, 100, 'Refrigerante lata 350ml'],
+        ['002', 'Produto', 'Agua Mineral 500ml', 0.80, 2.50, 'Unidade', 1, 1, 200, 'Agua s/ gas 500ml'],
+        ['003', 'Produto', 'Pao Frances', 0.50, 1.00, 'Unidade', 1, 1, 50, 'Pao frances unidade'],
+        ['004', 'Produto', 'Cafe Expresso', 1.00, 4.00, 'Unidade', 1, 1, 999, 'Cafe expresso curto'],
+        ['005', 'Produto', 'Salgado Assado', 2.00, 5.00, 'Unidade', 1, 1, 30, 'Salgado assado variado'],
     ];
 
-    $insProd = $pdo->prepare('INSERT IGNORE INTO produtos (codigo,nome,descricao,preco_custo,preco_venda,estoque,unidade) VALUES (?,?,?,?,?,?,?)');
-    foreach ($produtos as $p) {
-        $insProd->execute($p);
+    $insProd = $pdo->prepare(
+        'INSERT IGNORE INTO produtos
+        (codigo_barras,tipo_produto,descricao,preco_custo,preco_venda_varejo,unidade,ativo,movimenta_estoque,quantidade_estoque,descricao_produto)
+        VALUES (?,?,?,?,?,?,?,?,?,?)'
+    );
+    foreach ($produtos as $produto) {
+        $insProd->execute($produto);
     }
 
     $ok = true;
     $erro = '';
 } catch (Exception $e) {
-    $ok   = false;
+    $ok = false;
     $erro = $e->getMessage();
+    $adminCriado = false;
 }
 ?>
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
-<title>Setup — PDV Sistema</title>
+<title>Setup - PDV Sistema</title>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css">
 </head>
 <body class="bg-light">
 <div class="container py-5" style="max-width:600px">
     <div class="card shadow">
-        <div class="card-header bg-primary text-white fw-bold fs-5">
-            <i class="bi bi-gear me-2"></i>PDV Sistema — Instalação
-        </div>
+        <div class="card-header bg-primary text-white fw-bold fs-5">PDV Sistema - Instalacao</div>
         <div class="card-body">
             <?php if ($ok): ?>
             <div class="alert alert-success">
-                <h5><i class="bi bi-check-circle me-2"></i>Instalação concluída!</h5>
+                <h5>Instalacao concluida!</h5>
                 <ul class="mb-0 mt-2">
                     <li>Banco de dados <strong>pdv</strong> criado/verificado.</li>
                     <li>Tabelas criadas com sucesso.</li>
                     <?php if ($adminCriado): ?>
-                    <li>Usuário admin criado: <strong>admin@pdv.com</strong> / <strong>admin123</strong></li>
+                    <li>Usuario admin criado: <strong>admin@pdv.com</strong> / <strong>admin123</strong></li>
                     <?php else: ?>
-                    <li>Usuário admin já existia (não alterado).</li>
+                    <li>Usuario admin ja existia e nao foi alterado.</li>
                     <?php endif; ?>
                     <li>Produtos de exemplo inseridos.</li>
                 </ul>
             </div>
             <div class="alert alert-warning">
-                <i class="bi bi-exclamation-triangle me-2"></i>
-                <strong>Importante:</strong> Apague o arquivo <code>setup.php</code> após a instalação!
+                <strong>Importante:</strong> apague o arquivo <code>setup.php</code> apos a instalacao.
             </div>
-            <a href="/login.php" class="btn btn-primary btn-lg w-100">
-                <i class="bi bi-box-arrow-in-right me-2"></i>Ir para o Login
-            </a>
+            <a href="public/login" class="btn btn-primary btn-lg w-100">Ir para o Login</a>
             <?php else: ?>
             <div class="alert alert-danger">
-                <h5><i class="bi bi-x-circle me-2"></i>Erro na instalação</h5>
+                <h5>Erro na instalacao</h5>
                 <pre class="mb-0 mt-2"><?= htmlspecialchars($erro) ?></pre>
             </div>
             <p>Verifique as credenciais do banco em <code>setup.php</code> e tente novamente.</p>
@@ -148,6 +192,5 @@ try {
         </div>
     </div>
 </div>
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
 </body>
 </html>

@@ -12,7 +12,7 @@
                  data-nome="<?= strtolower(e($p->nome)) ?>"
                  data-codigo="<?= strtolower(e($p->codigo)) ?>">
                 <div class="card product-card h-100 shadow-sm"
-                     onclick="addToCart(<?= $p->id ?>, <?= json_encode($p->nome) ?>, <?= $p->precoVenda ?>, <?= $p->estoque ?>)">
+                     onclick="addToCart(<?= $p->id ?>, <?= json_encode($p->nome) ?>, <?= $p->precoVenda ?>, <?= $p->estoque ?>, <?= $p->movimentaEstoque ? 'true' : 'false' ?>)">
                     <div class="card-body p-3">
                         <div class="text-muted small mb-1"><code><?= e($p->codigo) ?></code></div>
                         <div class="fw-semibold mb-2" style="font-size:.95rem;line-height:1.3">
@@ -20,7 +20,7 @@
                         </div>
                         <div class="product-price"><?= money($p->precoVenda) ?></div>
                         <div class="product-stock mt-1">
-                            <i class="bi bi-box me-1"></i>Estoque: <?= $p->estoque ?>
+                            <i class="bi bi-box me-1"></i><?= $p->movimentaEstoque ? 'Estoque: ' . $p->estoque : 'Sem controle de estoque' ?>
                         </div>
                     </div>
                 </div>
@@ -42,6 +42,24 @@
                 <i class="bi bi-trash3"></i>
             </button>
         </div>
+
+        <?php if (!empty($empresas)): ?>
+        <div class="px-3 pt-3 pb-1 border-bottom bg-light">
+            <label class="form-label small fw-semibold mb-1">
+                <i class="bi bi-building me-1"></i>Empresa / CNPJ
+            </label>
+            <select id="empresaId" class="form-select form-select-sm">
+                <option value="0">— Selecione a empresa —</option>
+                <?php foreach ($empresas as $emp): ?>
+                <option value="<?= $emp->id ?>">
+                    <?= e($emp->nomeExibicao()) ?> — <?= e($emp->cnpjFormatado()) ?>
+                </option>
+                <?php endforeach; ?>
+            </select>
+        </div>
+        <?php else: ?>
+        <input type="hidden" id="empresaId" value="0">
+        <?php endif; ?>
 
         <div class="pdv-cart-items" id="cartItems">
             <div id="emptyMsg" class="text-center text-muted py-5">
@@ -116,21 +134,25 @@ const cart = {};
 
 const fmt = v => 'R$ ' + v.toFixed(2).replace('.', ',').replace(/\B(?=(\d{3})+(?!\d))/g, '.');
 
-function addToCart(id, nome, preco, estoque) {
+function addToCart(id, nome, preco, estoque, movimentaEstoque) {
     if (cart[id]) {
-        if (cart[id].qty >= estoque) {
+        if (movimentaEstoque && cart[id].qty >= estoque) {
             alert('Estoque insuficiente! Disponível: ' + estoque);
             return;
         }
         cart[id].qty++;
     } else {
-        cart[id] = { nome, preco, estoque, qty: 1 };
+        cart[id] = { nome, preco, estoque, movimentaEstoque, qty: 1 };
     }
     renderCart();
 }
 
 function changeQty(id, delta) {
     if (!cart[id]) return;
+    if (delta > 0 && cart[id].movimentaEstoque && cart[id].qty >= cart[id].estoque) {
+        alert('Estoque insuficiente! Disponível: ' + cart[id].estoque);
+        return;
+    }
     cart[id].qty += delta;
     if (cart[id].qty <= 0) delete cart[id];
     renderCart();
@@ -224,10 +246,12 @@ function finalizarVenda() {
     btn.disabled = true;
     btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Processando...';
 
+    const empresaId = parseInt(document.getElementById('empresaId').value) || 0;
+
     fetch('<?= BASE_URL ?>/pdv/finalizar', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ itens, desconto: desc, forma_pagamento: forma, valor_pago: pago, total: tot })
+        body: JSON.stringify({ itens, desconto: desc, forma_pagamento: forma, valor_pago: pago, total: tot, empresa_id: empresaId })
     })
     .then(r => r.json())
     .then(data => {

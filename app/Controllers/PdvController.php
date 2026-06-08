@@ -2,8 +2,10 @@
 
 namespace App\Controllers;
 
+use App\Repositories\EmpresaRepository;
 use App\Repositories\ProdutoRepository;
 use App\Repositories\VendaRepository;
+use App\Services\EmpresaService;
 use App\Services\ProdutoService;
 use App\Services\VendaService;
 
@@ -11,13 +13,15 @@ class PdvController
 {
     private VendaService   $vendaService;
     private ProdutoService $produtoService;
+    private EmpresaService $empresaService;
 
     public function __construct()
     {
-        $pdo                  = getDB();
-        $produtoRepo          = new ProdutoRepository($pdo);
-        $this->produtoService = new ProdutoService($produtoRepo);
-        $this->vendaService   = new VendaService(new VendaRepository($pdo), $produtoRepo);
+        $pdo                   = getDB();
+        $produtoRepo           = new ProdutoRepository($pdo);
+        $this->produtoService  = new ProdutoService($produtoRepo);
+        $this->vendaService    = new VendaService(new VendaRepository($pdo), $produtoRepo);
+        $this->empresaService  = new EmpresaService(new EmpresaRepository($pdo));
     }
 
     public function index(): void
@@ -27,6 +31,7 @@ class PdvController
         render('pdv/index', [
             'pageTitle' => 'PDV — Ponto de Venda',
             'produtos'  => $this->produtoService->listarParaPdv(),
+            'empresas'  => $this->empresaService->listarAtivas(),
         ]);
     }
 
@@ -54,6 +59,7 @@ class PdvController
             formaPagamento: $forma,
             valorPago:      (float)($data['valor_pago']  ?? 0),
             usuarioId:      auth()['id'],
+            empresaId:      (int)($data['empresa_id']    ?? 0),
         );
 
         jsonResponse($result, $result['ok'] ? 200 : 422);

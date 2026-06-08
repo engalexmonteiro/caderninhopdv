@@ -64,3 +64,10 @@ function e(mixed $val): string {
 function money(float $val): string {
     return 'R$ ' . number_format($val, 2, ',', '.');
 }
+
+function formatCnpj(string $cnpj): string {
+    $c = preg_replace('/\D/', '', $cnpj);
+    if (strlen($c) !== 14) return $cnpj;
+    return substr($c, 0, 2) . '.' . substr($c, 2, 3) . '.' . substr($c, 5, 3)
+         . '/' . substr($c, 8, 4) . '-' . substr($c, 12, 2);
+}

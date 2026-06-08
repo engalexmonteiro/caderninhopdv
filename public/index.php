@@ -31,6 +31,8 @@ $routes = [
     'GET /produtos'              => ['Controllers\\ProdutoController',   'index'],
     'GET /produtos/novo'         => ['Controllers\\ProdutoController',   'create'],
     'POST /produtos/novo'        => ['Controllers\\ProdutoController',   'store'],
+    'GET /produtos/importar'     => ['Controllers\\ProdutoController',   'importForm'],
+    'POST /produtos/importar'    => ['Controllers\\ProdutoController',   'import'],
     'GET /produtos/editar/{id}'  => ['Controllers\\ProdutoController',   'edit'],
     'POST /produtos/editar/{id}' => ['Controllers\\ProdutoController',   'update'],
     'GET /produtos/toggle/{id}'  => ['Controllers\\ProdutoController',   'toggle'],
@@ -41,9 +43,15 @@ $routes = [
     'GET /usuarios/editar/{id}'  => ['Controllers\\UsuarioController',   'edit'],
     'POST /usuarios/editar/{id}' => ['Controllers\\UsuarioController',   'update'],
     'GET /usuarios/toggle/{id}'  => ['Controllers\\UsuarioController',   'toggle'],
-    'GET /pdv'                   => ['Controllers\\PdvController',       'index'],
-    'POST /pdv/finalizar'        => ['Controllers\\PdvController',       'finalizar'],
-    'GET /vendas'                => ['Controllers\\VendaController',     'index'],
+    'GET /pdv'                        => ['Controllers\\PdvController',       'index'],
+    'POST /pdv/finalizar'             => ['Controllers\\PdvController',       'finalizar'],
+    'GET /vendas'                     => ['Controllers\\VendaController',     'index'],
+    'GET /empresas'                   => ['Controllers\\EmpresaController',   'index'],
+    'GET /empresas/nova'              => ['Controllers\\EmpresaController',   'create'],
+    'POST /empresas/nova'             => ['Controllers\\EmpresaController',   'store'],
+    'GET /empresas/editar/{id}'       => ['Controllers\\EmpresaController',   'edit'],
+    'POST /empresas/editar/{id}'      => ['Controllers\\EmpresaController',   'update'],
+    'GET /empresas/toggle/{id}'       => ['Controllers\\EmpresaController',   'toggle'],
 ];
 
 $matched = false;

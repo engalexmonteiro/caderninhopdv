@@ -7,6 +7,9 @@ class Venda
     public int    $id             = 0;
     public int    $usuarioId      = 0;
     public string $usuarioNome    = '';
+    public int    $empresaId      = 0;
+    public string $empresaNome    = '';
+    public string $empresaCnpj    = '';
     public float  $total          = 0.0;
     public float  $desconto       = 0.0;
     public string $formaPagamento = 'dinheiro';
@@ -24,6 +27,9 @@ class Venda
         $v->id             = (int)   ($row['id']              ?? 0);
         $v->usuarioId      = (int)   ($row['usuario_id']      ?? 0);
         $v->usuarioNome    = (string)($row['usuario_nome']    ?? '');
+        $v->empresaId      = (int)   ($row['empresa_id']      ?? 0);
+        $v->empresaNome    = (string)($row['empresa_nome']    ?? '');
+        $v->empresaCnpj    = (string)($row['empresa_cnpj']    ?? '');
         $v->total          = (float) ($row['total']           ?? 0);
         $v->desconto       = (float) ($row['desconto']        ?? 0);
         $v->formaPagamento = (string)($row['forma_pagamento'] ?? 'dinheiro');

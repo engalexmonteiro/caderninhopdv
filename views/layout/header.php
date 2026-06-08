@@ -23,19 +23,19 @@
         <div class="collapse navbar-collapse" id="navMain">
             <ul class="navbar-nav me-auto">
                 <?php
-                $navItems = [
-                    '/dashboard' => ['bi-speedometer2', 'Dashboard'],
-                    '/pdv'       => ['bi-cart3',        'PDV'],
-                    '/produtos'  => ['bi-box-seam',     'Produtos'],
-                ];
-                if (isAdmin()) {
-                    $navItems['/usuarios'] = ['bi-people',  'Usuários'];
-                    $navItems['/vendas']   = ['bi-receipt', 'Vendas'];
-                }
                 $fullUri = rtrim(parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH), '/') ?: '/';
                 $uri = BASE_URL && str_starts_with($fullUri, BASE_URL) ? substr($fullUri, strlen(BASE_URL)) : $fullUri;
                 $uri = $uri ?: '/';
-                foreach ($navItems as $href => [$icon, $label]):
+
+                $mainItems = [
+                    '/dashboard' => ['bi-speedometer2', 'Dashboard'],
+                    '/pdv'       => ['bi-cart3',        'PDV'],
+                ];
+                if (isAdmin()) {
+                    $mainItems['/vendas'] = ['bi-receipt', 'Vendas'];
+                }
+
+                foreach ($mainItems as $href => [$icon, $label]):
                     $active = str_starts_with($uri, $href) ? 'active' : '';
                 ?>
                 <li class="nav-item">
@@ -44,6 +44,38 @@
                     </a>
                 </li>
                 <?php endforeach; ?>
+
+                <?php
+                $cadastroItems = ['/produtos' => ['bi-box-seam', 'Produtos']];
+                if (isAdmin()) {
+                    $cadastroItems['/usuarios'] = ['bi-people',   'Usuários'];
+                    $cadastroItems['/empresas'] = ['bi-building', 'Empresas'];
+                }
+                $cadastroActive = false;
+                foreach (array_keys($cadastroItems) as $href) {
+                    if (str_starts_with($uri, $href)) { $cadastroActive = true; break; }
+                }
+                ?>
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle <?= $cadastroActive ? 'active' : '' ?>"
+                       href="#" data-bs-toggle="dropdown">
+                        <i class="bi bi-gear me-1"></i>Configurações
+                    </a>
+                    <ul class="dropdown-menu">
+                        <li><h6 class="dropdown-header">
+                            <i class="bi bi-card-list me-1"></i>Cadastro
+                        </h6></li>
+                        <?php foreach ($cadastroItems as $href => [$icon, $label]):
+                            $active = str_starts_with($uri, $href) ? 'active' : '';
+                        ?>
+                        <li>
+                            <a class="dropdown-item <?= $active ?>" href="<?= BASE_URL . $href ?>">
+                                <i class="bi <?= $icon ?> me-2"></i><?= $label ?>
+                            </a>
+                        </li>
+                        <?php endforeach; ?>
+                    </ul>
+                </li>
             </ul>
             <ul class="navbar-nav ms-auto">
                 <li class="nav-item dropdown">

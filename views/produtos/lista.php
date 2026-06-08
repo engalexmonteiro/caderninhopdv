@@ -2,9 +2,14 @@
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h4 class="mb-0 fw-bold"><i class="bi bi-box-seam me-2 text-primary"></i>Produtos</h4>
         <?php if (isAdmin()): ?>
-        <a href="<?= BASE_URL ?>/produtos/novo" class="btn btn-primary">
-            <i class="bi bi-plus-lg me-1"></i>Novo Produto
-        </a>
+        <div class="d-flex gap-2">
+            <a href="<?= BASE_URL ?>/produtos/importar" class="btn btn-outline-primary">
+                <i class="bi bi-file-earmark-spreadsheet me-1"></i>Importar XLSX
+            </a>
+            <a href="<?= BASE_URL ?>/produtos/novo" class="btn btn-primary">
+                <i class="bi bi-plus-lg me-1"></i>Novo Produto
+            </a>
+        </div>
         <?php endif; ?>
     </div>
 
@@ -19,7 +24,7 @@
         <div class="card-body py-3">
             <form method="GET" action="<?= BASE_URL ?>/produtos" class="d-flex gap-2">
                 <input type="text" name="q" value="<?= e($busca) ?>"
-                       class="form-control" placeholder="Buscar por nome ou código...">
+                       class="form-control" placeholder="Buscar por descrição, código de barras ou categoria...">
                 <button class="btn btn-outline-primary" type="submit"><i class="bi bi-search"></i></button>
                 <?php if ($busca !== ''): ?>
                 <a href="<?= BASE_URL ?>/produtos" class="btn btn-outline-secondary"><i class="bi bi-x-lg"></i></a>
@@ -31,29 +36,41 @@
     <div class="card">
         <div class="card-body p-0">
             <div class="table-responsive">
-                <table class="table table-hover mb-0">
+                <table class="table table-hover mb-0 align-middle">
                     <thead class="table-light">
                         <tr>
-                            <th>Código</th><th>Nome</th><th>Un.</th>
-                            <th class="text-end">Custo</th><th class="text-end">Venda</th>
-                            <th class="text-center">Estoque</th><th class="text-center">Status</th>
+                            <th>Código de Barras</th>
+                            <th>Descrição</th>
+                            <th>Categoria</th>
+                            <th>Un.</th>
+                            <th class="text-end">Custo</th>
+                            <th class="text-end">Varejo</th>
+                            <th class="text-center">Estoque</th>
+                            <th class="text-center">Mov.</th>
+                            <th class="text-center">Status</th>
                             <?php if (isAdmin()): ?><th class="text-center">Ações</th><?php endif; ?>
                         </tr>
                     </thead>
                     <tbody>
                         <?php if (empty($produtos)): ?>
-                        <tr><td colspan="8" class="text-center text-muted py-4">Nenhum produto encontrado.</td></tr>
+                        <tr><td colspan="<?= isAdmin() ? 10 : 9 ?>" class="text-center text-muted py-4">Nenhum produto encontrado.</td></tr>
                         <?php else: ?>
                         <?php foreach ($produtos as $p): ?>
                         <tr class="<?= !$p->ativo ? 'table-secondary text-muted' : '' ?>">
-                            <td><code><?= e($p->codigo) ?></code></td>
-                            <td class="fw-semibold"><?= e($p->nome) ?></td>
+                            <td><code><?= e($p->codigoBarras) ?></code></td>
+                            <td class="fw-semibold"><?= e($p->descricao) ?></td>
+                            <td><?= e($p->categoriaProduto) ?></td>
                             <td><?= e($p->unidade) ?></td>
                             <td class="text-end"><?= money($p->precoCusto) ?></td>
-                            <td class="text-end fw-bold text-success"><?= money($p->precoVenda) ?></td>
+                            <td class="text-end fw-bold text-success"><?= money($p->precoVendaVarejo) ?></td>
                             <td class="text-center">
-                                <span class="badge <?= $p->estoque > 5 ? 'bg-success' : ($p->estoque > 0 ? 'bg-warning text-dark' : 'bg-danger') ?>">
-                                    <?= $p->estoque ?>
+                                <span class="badge <?= $p->quantidadeEstoque > 5 ? 'bg-success' : ($p->quantidadeEstoque > 0 ? 'bg-warning text-dark' : 'bg-danger') ?>">
+                                    <?= $p->quantidadeEstoque ?>
+                                </span>
+                            </td>
+                            <td class="text-center">
+                                <span class="badge <?= $p->movimentaEstoque ? 'bg-info text-dark' : 'bg-light text-muted' ?>">
+                                    <?= $p->movimentaEstoque ? 'Sim' : 'Não' ?>
                                 </span>
                             </td>
                             <td class="text-center">

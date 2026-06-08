@@ -48,15 +48,7 @@ class ProdutoController
         $result = $this->service->salvar($_POST);
 
         if (!$result['ok']) {
-            $produto = new Produto();
-            $produto->codigo     = trim($_POST['codigo']   ?? '');
-            $produto->nome       = trim($_POST['nome']     ?? '');
-            $produto->descricao  = trim($_POST['descricao'] ?? '');
-            $produto->precoCusto = (float) str_replace(',', '.', $_POST['preco_custo'] ?? '0');
-            $produto->precoVenda = (float) str_replace(',', '.', $_POST['preco_venda'] ?? '0');
-            $produto->estoque    = (int)  ($_POST['estoque'] ?? 0);
-            $produto->unidade    = trim($_POST['unidade'] ?? 'UN');
-            $produto->ativo      = isset($_POST['ativo']);
+            [$produto] = $this->service->prepararProduto($_POST);
 
             render('produtos/form', [
                 'pageTitle' => 'Novo Produto',
@@ -92,15 +84,7 @@ class ProdutoController
         $result = $this->service->salvar($_POST, (int) $id);
 
         if (!$result['ok']) {
-            $produto = $this->service->buscarPorId((int) $id) ?? new Produto();
-            $produto->codigo     = trim($_POST['codigo']   ?? '');
-            $produto->nome       = trim($_POST['nome']     ?? '');
-            $produto->descricao  = trim($_POST['descricao'] ?? '');
-            $produto->precoCusto = (float) str_replace(',', '.', $_POST['preco_custo'] ?? '0');
-            $produto->precoVenda = (float) str_replace(',', '.', $_POST['preco_venda'] ?? '0');
-            $produto->estoque    = (int)  ($_POST['estoque'] ?? 0);
-            $produto->unidade    = trim($_POST['unidade'] ?? 'UN');
-            $produto->ativo      = isset($_POST['ativo']);
+            [$produto] = $this->service->prepararProduto($_POST, (int) $id);
 
             render('produtos/form', [
                 'pageTitle' => 'Editar Produto',
@@ -125,5 +109,46 @@ class ProdutoController
         requireAdmin();
         $this->service->excluir((int) $id);
         redirect('/produtos', 'produto', 'Produto excluído com sucesso.');
+    }
+    public function importForm(): void
+    {
+        requireAdmin();
+
+        render('produtos/importar', [
+            'pageTitle' => 'Importar Produtos',
+            'result' => null,
+            'errors' => [],
+        ]);
+    }
+
+    public function import(): void
+    {
+        requireAdmin();
+
+        $file = $_FILES['arquivo'] ?? null;
+        $errors = [];
+
+        if (!$file || ($file['error'] ?? UPLOAD_ERR_NO_FILE) !== UPLOAD_ERR_OK) {
+            $errors[] = 'Selecione um arquivo .xlsx válido.';
+        } elseif (strtolower(pathinfo($file['name'], PATHINFO_EXTENSION)) !== 'xlsx') {
+            $errors[] = 'O arquivo precisa estar no formato .xlsx.';
+        }
+
+        if (!empty($errors)) {
+            render('produtos/importar', [
+                'pageTitle' => 'Importar Produtos',
+                'result' => null,
+                'errors' => $errors,
+            ]);
+            return;
+        }
+
+        $result = $this->service->importarXlsx($file['tmp_name']);
+
+        render('produtos/importar', [
+            'pageTitle' => 'Importar Produtos',
+            'result' => $result,
+            'errors' => [],
+        ]);
     }
 }
