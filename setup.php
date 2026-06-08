@@ -44,6 +44,15 @@ try {
         criado_em DATETIME DEFAULT CURRENT_TIMESTAMP
     )");
 
+    $pdo->exec("CREATE TABLE IF NOT EXISTS tipos_pagamento (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        codigo VARCHAR(50) NOT NULL UNIQUE,
+        nome VARCHAR(100) NOT NULL,
+        ordem INT NOT NULL DEFAULT 0,
+        ativo TINYINT(1) NOT NULL DEFAULT 1,
+        criado_em DATETIME DEFAULT CURRENT_TIMESTAMP
+    )");
+
     $pdo->exec("CREATE TABLE IF NOT EXISTS produtos (
         id INT AUTO_INCREMENT PRIMARY KEY,
         codigo_barras VARCHAR(50) NOT NULL UNIQUE,
@@ -92,15 +101,41 @@ try {
         id INT AUTO_INCREMENT PRIMARY KEY,
         usuario_id INT NOT NULL,
         empresa_id INT NULL,
+        caixa_id INT NULL,
         total DECIMAL(10,2) NOT NULL DEFAULT 0.00,
         desconto DECIMAL(10,2) NOT NULL DEFAULT 0.00,
-        forma_pagamento ENUM('dinheiro','cartao_credito','cartao_debito','pix') NOT NULL DEFAULT 'dinheiro',
+        forma_pagamento VARCHAR(50) NOT NULL DEFAULT 'dinheiro',
         valor_pago DECIMAL(10,2) NOT NULL DEFAULT 0.00,
         troco DECIMAL(10,2) NOT NULL DEFAULT 0.00,
         status ENUM('concluida','cancelada') NOT NULL DEFAULT 'concluida',
         criado_em DATETIME DEFAULT CURRENT_TIMESTAMP,
         FOREIGN KEY (usuario_id) REFERENCES usuarios(id),
         FOREIGN KEY (empresa_id) REFERENCES empresas(id)
+    )");
+
+    $pdo->exec("CREATE TABLE IF NOT EXISTS caixas (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        usuario_id INT NOT NULL,
+        fundo_inicial DECIMAL(10,2) NOT NULL DEFAULT 0.00,
+        valor_fechamento DECIMAL(10,2) NOT NULL DEFAULT 0.00,
+        status ENUM('aberto','fechado') NOT NULL DEFAULT 'aberto',
+        observacao_abertura TEXT NULL,
+        observacao_fechamento TEXT NULL,
+        aberto_em DATETIME DEFAULT CURRENT_TIMESTAMP,
+        fechado_em DATETIME NULL,
+        FOREIGN KEY (usuario_id) REFERENCES usuarios(id)
+    )");
+
+    $pdo->exec("CREATE TABLE IF NOT EXISTS caixa_operacoes (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        caixa_id INT NOT NULL,
+        usuario_id INT NOT NULL,
+        tipo ENUM('sangria','reforco') NOT NULL,
+        valor DECIMAL(10,2) NOT NULL,
+        observacao TEXT NULL,
+        criado_em DATETIME DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (caixa_id) REFERENCES caixas(id),
+        FOREIGN KEY (usuario_id) REFERENCES usuarios(id)
     )");
 
     $pdo->exec("CREATE TABLE IF NOT EXISTS venda_itens (
@@ -142,6 +177,19 @@ try {
     );
     foreach ($produtos as $produto) {
         $insProd->execute($produto);
+    }
+
+    $tiposPagamento = [
+        ['dinheiro', 'Dinheiro', 10],
+        ['cartao_credito', 'Cartao Credito', 20],
+        ['cartao_debito', 'Cartao Debito', 30],
+        ['pix', 'PIX', 40],
+    ];
+    $insTipoPagamento = $pdo->prepare(
+        'INSERT IGNORE INTO tipos_pagamento (codigo, nome, ordem, ativo) VALUES (?,?,?,1)'
+    );
+    foreach ($tiposPagamento as $tipoPagamento) {
+        $insTipoPagamento->execute($tipoPagamento);
     }
 
     $ok = true;

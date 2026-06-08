@@ -26,7 +26,8 @@ class VendaService
         string $formaPagamento,
         float  $valorPago,
         int    $usuarioId,
-        int    $empresaId = 0
+        int    $empresaId = 0,
+        int    $caixaId = 0
     ): array {
         if (empty($itensInput)) {
             return ['ok' => false, 'venda_id' => 0, 'erro' => 'Carrinho vazio.'];
@@ -103,6 +104,7 @@ class VendaService
         $venda                = new Venda();
         $venda->usuarioId     = $usuarioId;
         $venda->empresaId     = $empresaId;
+        $venda->caixaId       = $caixaId;
         $venda->total         = $total;
         $venda->desconto      = $desconto;
         $venda->formaPagamento = $formaPagamento;

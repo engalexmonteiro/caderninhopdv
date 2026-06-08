@@ -8,6 +8,7 @@ class Venda
     public int    $usuarioId      = 0;
     public string $usuarioNome    = '';
     public int    $empresaId      = 0;
+    public int    $caixaId        = 0;
     public string $empresaNome    = '';
     public string $empresaCnpj    = '';
     public float  $total          = 0.0;
@@ -28,6 +29,7 @@ class Venda
         $v->usuarioId      = (int)   ($row['usuario_id']      ?? 0);
         $v->usuarioNome    = (string)($row['usuario_nome']    ?? '');
         $v->empresaId      = (int)   ($row['empresa_id']      ?? 0);
+        $v->caixaId        = (int)   ($row['caixa_id']        ?? 0);
         $v->empresaNome    = (string)($row['empresa_nome']    ?? '');
         $v->empresaCnpj    = (string)($row['empresa_cnpj']    ?? '');
         $v->total          = (float) ($row['total']           ?? 0);
@@ -42,6 +44,10 @@ class Venda
 
     public static function formaLabel(string $forma): string
     {
+        if (!in_array($forma, ['dinheiro', 'cartao_credito', 'cartao_debito', 'pix'], true)) {
+            return ucwords(str_replace('_', ' ', $forma));
+        }
+
         return match ($forma) {
             'cartao_credito' => 'Cartão Crédito',
             'cartao_debito'  => 'Cartão Débito',

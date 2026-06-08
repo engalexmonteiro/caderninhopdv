@@ -1,4 +1,66 @@
-<div class="pdv-wrapper">
+<?php
+$caixaAberto = $caixa !== null;
+$saldoEsperado = $caixaResumo['saldo_esperado'] ?? 0.0;
+?>
+
+<div class="container-fluid pt-3 px-3">
+    <?php if (!empty($caixaFlash)): ?>
+    <div class="alert alert-info alert-dismissible fade show mb-3">
+        <i class="bi bi-info-circle me-2"></i><?= e($caixaFlash) ?>
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+    <?php endif; ?>
+
+    <?php if ($caixaAberto): ?>
+    <div class="card mb-3">
+        <div class="card-body py-3">
+            <div class="d-flex flex-wrap justify-content-between align-items-center gap-3">
+                <div>
+                    <div class="small text-muted">Caixa aberto</div>
+                    <div class="fw-bold">
+                        <i class="bi bi-cash-register text-success me-1"></i>
+                        #<?= $caixa->id ?> desde <?= e($caixa->abertoEm) ?>
+                    </div>
+                </div>
+                <div class="d-flex flex-wrap gap-3">
+                    <div>
+                        <div class="small text-muted">Fundo inicial</div>
+                        <div class="fw-semibold"><?= money($caixa->fundoInicial) ?></div>
+                    </div>
+                    <div>
+                        <div class="small text-muted">Vendas em dinheiro</div>
+                        <div class="fw-semibold"><?= money($caixaResumo['vendas_dinheiro'] ?? 0) ?></div>
+                    </div>
+                    <div>
+                        <div class="small text-muted">Saldo esperado</div>
+                        <div class="fw-bold text-success"><?= money($saldoEsperado) ?></div>
+                    </div>
+                </div>
+                <div class="d-flex gap-2">
+                    <button type="button" class="btn btn-outline-danger btn-sm" data-bs-toggle="modal" data-bs-target="#modalSangria">
+                        <i class="bi bi-arrow-down-circle me-1"></i>Sangria
+                    </button>
+                    <button type="button" class="btn btn-outline-success btn-sm" data-bs-toggle="modal" data-bs-target="#modalReforco">
+                        <i class="bi bi-arrow-up-circle me-1"></i>Reforço
+                    </button>
+                    <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-toggle="modal" data-bs-target="#modalFecharCaixa">
+                        <i class="bi bi-lock me-1"></i>Fechar Caixa
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <?php else: ?>
+    <div class="alert alert-warning d-flex justify-content-between align-items-center mb-3">
+        <div><i class="bi bi-lock me-2"></i>Abra o caixa para iniciar as vendas.</div>
+        <button type="button" class="btn btn-warning" data-bs-toggle="modal" data-bs-target="#modalAbrirCaixa">
+            <i class="bi bi-unlock me-1"></i>Abrir Caixa
+        </button>
+    </div>
+    <?php endif; ?>
+</div>
+
+<div class="pdv-wrapper <?= $caixaAberto ? '' : 'pdv-locked' ?>">
 
     <!-- Painel de Produtos -->
     <div class="pdv-products">
@@ -12,7 +74,12 @@
                  data-nome="<?= strtolower(e($p->nome)) ?>"
                  data-codigo="<?= strtolower(e($p->codigo)) ?>">
                 <div class="card product-card h-100 shadow-sm"
-                     onclick="addToCart(<?= $p->id ?>, <?= json_encode($p->nome) ?>, <?= $p->precoVenda ?>, <?= $p->estoque ?>, <?= $p->movimentaEstoque ? 'true' : 'false' ?>)">
+                     role="button"
+                     data-id="<?= $p->id ?>"
+                     data-nome="<?= e($p->nome) ?>"
+                     data-preco="<?= number_format($p->precoVenda, 2, '.', '') ?>"
+                     data-estoque="<?= $p->estoque ?>"
+                     data-movimenta-estoque="<?= $p->movimentaEstoque ? '1' : '0' ?>">
                     <div class="card-body p-3">
                         <div class="text-muted small mb-1"><code><?= e($p->codigo) ?></code></div>
                         <div class="fw-semibold mb-2" style="font-size:.95rem;line-height:1.3">
@@ -78,10 +145,9 @@
                 <div class="col-6">
                     <label class="form-label small fw-semibold mb-1">Forma de Pagamento</label>
                     <select id="formaPagamento" class="form-select form-select-sm" onchange="toggleDinheiro()">
-                        <option value="dinheiro">Dinheiro</option>
-                        <option value="cartao_debito">Cartão Débito</option>
-                        <option value="cartao_credito">Cartão Crédito</option>
-                        <option value="pix">PIX</option>
+                        <?php foreach ($tiposPagamento ?? [] as $tipo): ?>
+                        <option value="<?= e($tipo->codigo) ?>"><?= e($tipo->nome) ?></option>
+                        <?php endforeach; ?>
                     </select>
                 </div>
             </div>
@@ -129,12 +195,167 @@
     </div>
 </div>
 
+<div class="modal fade" id="modalAbrirCaixa" tabindex="-1" <?= $caixaAberto ? '' : 'data-bs-backdrop="static"' ?>>
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <form method="POST" action="<?= BASE_URL ?>/pdv/caixa/abrir">
+                <div class="modal-header">
+                    <h5 class="modal-title fw-bold"><i class="bi bi-unlock me-2 text-success"></i>Abrir Caixa</h5>
+                    <?php if ($caixaAberto): ?><button type="button" class="btn-close" data-bs-dismiss="modal"></button><?php endif; ?>
+                </div>
+                <div class="modal-body">
+                    <label class="form-label fw-semibold">Fundo de caixa</label>
+                    <div class="input-group mb-3">
+                        <span class="input-group-text">R$</span>
+                        <input type="text" name="fundo_inicial" class="form-control" value="0,00" required autofocus>
+                    </div>
+                    <label class="form-label fw-semibold">Observação</label>
+                    <textarea name="observacao" class="form-control" rows="2"></textarea>
+                </div>
+                <div class="modal-footer">
+                    <button type="submit" class="btn btn-success">
+                        <i class="bi bi-check-lg me-1"></i>Abrir Caixa
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<?php if ($caixaAberto): ?>
+<div class="modal fade" id="modalSangria" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <form method="POST" action="<?= BASE_URL ?>/pdv/caixa/sangria">
+                <div class="modal-header">
+                    <h5 class="modal-title fw-bold"><i class="bi bi-arrow-down-circle me-2 text-danger"></i>Sangria</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <label class="form-label fw-semibold">Valor</label>
+                    <div class="input-group mb-3">
+                        <span class="input-group-text">R$</span>
+                        <input type="text" name="valor" class="form-control" required>
+                    </div>
+                    <label class="form-label fw-semibold">Observação</label>
+                    <textarea name="observacao" class="form-control" rows="2"></textarea>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-danger">Registrar Sangria</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="modalReforco" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <form method="POST" action="<?= BASE_URL ?>/pdv/caixa/reforco">
+                <div class="modal-header">
+                    <h5 class="modal-title fw-bold"><i class="bi bi-arrow-up-circle me-2 text-success"></i>Reforço</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <label class="form-label fw-semibold">Valor</label>
+                    <div class="input-group mb-3">
+                        <span class="input-group-text">R$</span>
+                        <input type="text" name="valor" class="form-control" required>
+                    </div>
+                    <label class="form-label fw-semibold">Observação</label>
+                    <textarea name="observacao" class="form-control" rows="2"></textarea>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-success">Registrar Reforço</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="modalFecharCaixa" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content">
+            <form method="POST" action="<?= BASE_URL ?>/pdv/caixa/fechar">
+                <div class="modal-header">
+                    <h5 class="modal-title fw-bold"><i class="bi bi-lock me-2 text-secondary"></i>Fechar Caixa</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-3">
+                            <div class="small text-muted">Fundo inicial</div>
+                            <div class="fw-semibold"><?= money($caixa->fundoInicial) ?></div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="small text-muted">Dinheiro</div>
+                            <div class="fw-semibold"><?= money($caixaResumo['vendas_dinheiro'] ?? 0) ?></div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="small text-muted">Reforços</div>
+                            <div class="fw-semibold text-success"><?= money($caixaResumo['reforcos'] ?? 0) ?></div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="small text-muted">Sangrias</div>
+                            <div class="fw-semibold text-danger"><?= money($caixaResumo['sangrias'] ?? 0) ?></div>
+                        </div>
+                    </div>
+                    <div class="alert alert-light border d-flex justify-content-between align-items-center">
+                        <span>Saldo esperado em dinheiro</span>
+                        <strong class="text-success"><?= money($saldoEsperado) ?></strong>
+                    </div>
+                    <?php if (!empty($caixaResumo['vendas_por_forma'])): ?>
+                    <div class="table-responsive mb-3">
+                        <table class="table table-sm">
+                            <thead><tr><th>Forma</th><th class="text-center">Vendas</th><th class="text-end">Total</th></tr></thead>
+                            <tbody>
+                                <?php foreach ($caixaResumo['vendas_por_forma'] as $row): ?>
+                                <tr>
+                                    <td><?= e(App\Models\Venda::formaLabel($row['forma_pagamento'])) ?></td>
+                                    <td class="text-center"><?= $row['quantidade'] ?></td>
+                                    <td class="text-end"><?= money($row['total']) ?></td>
+                                </tr>
+                                <?php endforeach; ?>
+                            </tbody>
+                        </table>
+                    </div>
+                    <?php endif; ?>
+                    <label class="form-label fw-semibold">Valor contado no caixa</label>
+                    <div class="input-group mb-3">
+                        <span class="input-group-text">R$</span>
+                        <input type="text" name="valor_fechamento" class="form-control"
+                               value="<?= number_format($saldoEsperado, 2, ',', '.') ?>" required>
+                    </div>
+                    <label class="form-label fw-semibold">Observação</label>
+                    <textarea name="observacao" class="form-control" rows="2"></textarea>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-secondary">Fechar Caixa</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+<?php endif; ?>
+
 <script>
 const cart = {};
+const caixaAberto = <?= $caixaAberto ? 'true' : 'false' ?>;
 
 const fmt = v => 'R$ ' + v.toFixed(2).replace('.', ',').replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+const escapeHtml = value => String(value).replace(/[&<>"']/g, char => ({
+    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;'
+}[char]));
 
 function addToCart(id, nome, preco, estoque, movimentaEstoque) {
+    if (!caixaAberto) {
+        new bootstrap.Modal(document.getElementById('modalAbrirCaixa')).show();
+        return;
+    }
+
     if (cart[id]) {
         if (movimentaEstoque && cart[id].qty >= estoque) {
             alert('Estoque insuficiente! Disponível: ' + estoque);
@@ -182,7 +403,7 @@ function renderCart() {
         const item = cart[id];
         const sub  = item.preco * item.qty;
         return `<div class="pdv-cart-item">
-            <div class="item-name">${item.nome}</div>
+            <div class="item-name">${escapeHtml(item.nome)}</div>
             <div class="d-flex align-items-center gap-1">
                 <button class="btn btn-sm btn-outline-secondary py-0 px-1" onclick="changeQty(${id},-1)">−</button>
                 <span class="fw-bold px-1">${item.qty}</span>
@@ -198,7 +419,7 @@ function renderCart() {
         </div>`;
     }).join('');
 
-    document.getElementById('btnFinalizar').disabled = false;
+    document.getElementById('btnFinalizar').disabled = !caixaAberto;
     updateTotal();
 }
 
@@ -225,6 +446,11 @@ function toggleDinheiro() {
 }
 
 function finalizarVenda() {
+    if (!caixaAberto) {
+        new bootstrap.Modal(document.getElementById('modalAbrirCaixa')).show();
+        return;
+    }
+
     const sub  = getSubtotal();
     if (sub === 0) return;
 
@@ -291,4 +517,22 @@ document.getElementById('searchProduto').addEventListener('input', function () {
         el.style.display = (!q || el.dataset.nome.includes(q) || el.dataset.codigo.includes(q)) ? '' : 'none';
     });
 });
+
+document.querySelectorAll('.product-card').forEach(card => {
+    card.addEventListener('click', () => {
+        addToCart(
+            parseInt(card.dataset.id, 10),
+            card.dataset.nome,
+            parseFloat(card.dataset.preco) || 0,
+            parseInt(card.dataset.estoque, 10) || 0,
+            card.dataset.movimentaEstoque === '1'
+        );
+    });
+});
+
+if (!caixaAberto) {
+    document.addEventListener('DOMContentLoaded', () => {
+        new bootstrap.Modal(document.getElementById('modalAbrirCaixa')).show();
+    });
+}
 </script>

@@ -39,6 +39,7 @@ body {
     padding: 1rem;
 }
 .pdv-products { overflow-y: auto; }
+.pdv-locked .product-card { opacity: .55; cursor: not-allowed; }
 .pdv-cart {
     display: flex; flex-direction: column;
     background: #fff; border-radius: 12px;

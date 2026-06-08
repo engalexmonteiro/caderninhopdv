@@ -45,6 +45,10 @@ $routes = [
     'GET /usuarios/toggle/{id}'  => ['Controllers\\UsuarioController',   'toggle'],
     'GET /pdv'                        => ['Controllers\\PdvController',       'index'],
     'POST /pdv/finalizar'             => ['Controllers\\PdvController',       'finalizar'],
+    'POST /pdv/caixa/abrir'           => ['Controllers\\PdvController',       'abrirCaixa'],
+    'POST /pdv/caixa/sangria'         => ['Controllers\\PdvController',       'sangria'],
+    'POST /pdv/caixa/reforco'         => ['Controllers\\PdvController',       'reforco'],
+    'POST /pdv/caixa/fechar'          => ['Controllers\\PdvController',       'fecharCaixa'],
     'GET /vendas'                     => ['Controllers\\VendaController',     'index'],
     'GET /empresas'                   => ['Controllers\\EmpresaController',   'index'],
     'GET /empresas/nova'              => ['Controllers\\EmpresaController',   'create'],
@@ -52,6 +56,12 @@ $routes = [
     'GET /empresas/editar/{id}'       => ['Controllers\\EmpresaController',   'edit'],
     'POST /empresas/editar/{id}'      => ['Controllers\\EmpresaController',   'update'],
     'GET /empresas/toggle/{id}'       => ['Controllers\\EmpresaController',   'toggle'],
+    'GET /financeiro/tipos-pagamento'              => ['Controllers\\TipoPagamentoController', 'index'],
+    'GET /financeiro/tipos-pagamento/novo'         => ['Controllers\\TipoPagamentoController', 'create'],
+    'POST /financeiro/tipos-pagamento/novo'        => ['Controllers\\TipoPagamentoController', 'store'],
+    'GET /financeiro/tipos-pagamento/editar/{id}'  => ['Controllers\\TipoPagamentoController', 'edit'],
+    'POST /financeiro/tipos-pagamento/editar/{id}' => ['Controllers\\TipoPagamentoController', 'update'],
+    'GET /financeiro/tipos-pagamento/toggle/{id}'  => ['Controllers\\TipoPagamentoController', 'toggle'],
 ];
 
 $matched = false;

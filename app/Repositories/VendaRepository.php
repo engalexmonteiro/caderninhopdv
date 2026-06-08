@@ -8,7 +8,12 @@ use PDO;
 
 class VendaRepository
 {
-    public function __construct(private PDO $pdo) {}
+    private static bool $schemaChecked = false;
+
+    public function __construct(private PDO $pdo)
+    {
+        $this->ensureSchema();
+    }
 
     /** @return Venda[] */
     public function findByPeriodo(string $dataInicio, string $dataFim, int $empresaId = 0): array
@@ -90,12 +95,13 @@ class VendaRepository
 
         try {
             $stmt = $this->pdo->prepare(
-                'INSERT INTO vendas (usuario_id, empresa_id, total, desconto, forma_pagamento, valor_pago, troco)
-                 VALUES (?,?,?,?,?,?,?)'
+                'INSERT INTO vendas (usuario_id, empresa_id, caixa_id, total, desconto, forma_pagamento, valor_pago, troco)
+                 VALUES (?,?,?,?,?,?,?,?)'
             );
             $stmt->execute([
                 $venda->usuarioId,
                 $venda->empresaId > 0 ? $venda->empresaId : null,
+                $venda->caixaId > 0 ? $venda->caixaId : null,
                 $venda->total,
                 $venda->desconto,
                 $venda->formaPagamento,
@@ -125,6 +131,24 @@ class VendaRepository
         } catch (\Throwable $e) {
             $this->pdo->rollBack();
             throw $e;
+        }
+    }
+
+    private function ensureSchema(): void
+    {
+        if (self::$schemaChecked) {
+            return;
+        }
+        self::$schemaChecked = true;
+
+        $column = $this->pdo->query("SHOW COLUMNS FROM vendas LIKE 'forma_pagamento'")->fetch();
+        if ($column && str_starts_with(strtolower((string) $column['Type']), 'enum(')) {
+            $this->pdo->exec("ALTER TABLE vendas MODIFY forma_pagamento VARCHAR(50) NOT NULL DEFAULT 'dinheiro'");
+        }
+
+        $column = $this->pdo->query("SHOW COLUMNS FROM vendas LIKE 'caixa_id'")->fetch();
+        if (!$column) {
+            $this->pdo->exec('ALTER TABLE vendas ADD COLUMN caixa_id INT NULL AFTER empresa_id');
         }
     }
 }

@@ -47,12 +47,14 @@
 
                 <?php
                 $cadastroItems = ['/produtos' => ['bi-box-seam', 'Produtos']];
+                $financeiroItems = [];
                 if (isAdmin()) {
                     $cadastroItems['/usuarios'] = ['bi-people',   'Usuários'];
                     $cadastroItems['/empresas'] = ['bi-building', 'Empresas'];
+                    $financeiroItems['/financeiro/tipos-pagamento'] = ['bi-credit-card-2-front', 'Tipos de Pagamento'];
                 }
                 $cadastroActive = false;
-                foreach (array_keys($cadastroItems) as $href) {
+                foreach (array_merge(array_keys($cadastroItems), array_keys($financeiroItems)) as $href) {
                     if (str_starts_with($uri, $href)) { $cadastroActive = true; break; }
                 }
                 ?>
@@ -74,6 +76,21 @@
                             </a>
                         </li>
                         <?php endforeach; ?>
+                        <?php if (!empty($financeiroItems)): ?>
+                        <li><hr class="dropdown-divider"></li>
+                        <li><h6 class="dropdown-header">
+                            <i class="bi bi-cash-coin me-1"></i>Financeiro
+                        </h6></li>
+                        <?php foreach ($financeiroItems as $href => [$icon, $label]):
+                            $active = str_starts_with($uri, $href) ? 'active' : '';
+                        ?>
+                        <li>
+                            <a class="dropdown-item <?= $active ?>" href="<?= BASE_URL . $href ?>">
+                                <i class="bi <?= $icon ?> me-2"></i><?= $label ?>
+                            </a>
+                        </li>
+                        <?php endforeach; ?>
+                        <?php endif; ?>
                     </ul>
                 </li>
             </ul>
