@@ -78,6 +78,11 @@ body.app-dark-mode {
     height: calc(100vh - 70px);
     padding: 1rem;
 }
+
+#pdv-venda .pdv-wrapper {
+    height: calc(100vh - 140px);
+    padding: 0 0 1rem;
+}
 .pdv-products { overflow-y: auto; }
 .pdv-locked .product-card { opacity: .55; cursor: not-allowed; }
 .pdv-cart {

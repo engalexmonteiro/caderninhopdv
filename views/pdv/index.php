@@ -28,6 +28,22 @@ foreach ($produtos as $produto) {
     </div>
     <?php endif; ?>
 
+    <ul class="nav nav-tabs mb-3" id="pdvTabs" role="tablist">
+        <li class="nav-item" role="presentation">
+            <button class="nav-link active" id="pdv-venda-tab" data-bs-toggle="tab" data-bs-target="#pdv-venda" type="button" role="tab">
+                <i class="bi bi-cart3 me-1"></i>Venda
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="pdv-caixa-tab" data-bs-toggle="tab" data-bs-target="#pdv-caixa" type="button" role="tab">
+                <i class="bi bi-cash-register me-1"></i>Caixa
+            </button>
+        </li>
+    </ul>
+
+    <div class="tab-content" id="pdvTabsContent">
+        <div class="tab-pane fade" id="pdv-caixa" role="tabpanel" aria-labelledby="pdv-caixa-tab">
+
     <?php if ($caixaAberto): ?>
     <div class="card mb-3">
         <div class="card-body py-3">
@@ -75,8 +91,10 @@ foreach ($produtos as $produto) {
         </button>
     </div>
     <?php endif; ?>
-</div>
 
+        </div>
+
+        <div class="tab-pane fade show active" id="pdv-venda" role="tabpanel" aria-labelledby="pdv-venda-tab">
 <div class="pdv-wrapper <?= $caixaAberto ? '' : 'pdv-locked' ?>">
 
     <!-- Painel de Produtos -->
@@ -257,6 +275,10 @@ foreach ($produtos as $produto) {
                     onclick="finalizarVenda()" disabled>
                 <i class="bi bi-check-circle me-2"></i>Finalizar Venda
             </button>
+        </div>
+    </div>
+</div>
+
         </div>
     </div>
 </div>
