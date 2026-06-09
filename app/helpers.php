@@ -44,9 +44,31 @@ function isAdmin(): bool {
     return ($_SESSION['user_perfil'] ?? '') === 'admin';
 }
 
+function csrfToken(): string {
+    if (empty($_SESSION['csrf_token'])) {
+        $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
+    }
+    return $_SESSION['csrf_token'];
+}
+
+function csrfField(): string {
+    return '<input type="hidden" name="_csrf" value="' . e(csrfToken()) . '">';
+}
+
+function verifyCsrf(): void {
+    $token = $_POST['_csrf'] ?? ($_SERVER['HTTP_X_CSRF_TOKEN'] ?? '');
+    if (!hash_equals(csrfToken(), $token)) {
+        http_response_code(403);
+        exit('Requisição inválida.');
+    }
+}
+
 function requireLogin(): void {
     if (!isLoggedIn()) {
         redirect('/login');
+    }
+    if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+        verifyCsrf();
     }
 }
 

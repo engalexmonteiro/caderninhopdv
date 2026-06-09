@@ -9,6 +9,7 @@ $__appName = $__appContext['nomeAplicacao'];
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="<?= e(csrfToken()) ?>"><?php // token lido pelo JS do PDV ?>
     <title><?= e($pageTitle ?? $__appName) ?> - <?= e($__appName) ?></title>
     <?php if ($__personalizacao->favicon !== ''): ?>
     <link rel="icon" href="<?= assetUrl($__personalizacao->favicon) ?>">

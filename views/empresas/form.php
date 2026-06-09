@@ -26,7 +26,7 @@
                   enctype="multipart/form-data"
                   action="<?= BASE_URL . ($empresa->id > 0 ? '/empresas/editar/' . $empresa->id : '/empresas/nova') ?>"
                   novalidate>
-
+                <?= csrfField() ?>
                 <h6 class="text-primary fw-bold mb-3"><i class="bi bi-info-circle me-1"></i>Dados Principais</h6>
                 <div class="row g-3 mb-3">
                     <div class="col-md-8">
@@ -95,8 +95,8 @@
                     <div class="col-md-6">
                         <label class="form-label fw-semibold">Imagem da Logo</label>
                         <input type="file" name="logomarca" class="form-control"
-                               accept="image/jpeg,image/png,image/gif,image/webp,image/svg+xml">
-                        <div class="form-text">JPG, PNG, GIF, WebP ou SVG. Tamanho máximo: 2MB.</div>
+                               accept="image/jpeg,image/png,image/gif,image/webp">
+                        <div class="form-text">JPG, PNG, GIF ou WebP. Tamanho máximo: 2MB.</div>
                     </div>
                     <?php if ($empresa->logomarca): ?>
                     <div class="col-md-6 d-flex align-items-center gap-3">

@@ -57,6 +57,12 @@ class VendaController
             return;
         }
 
+        if (!isAdmin() && $venda->usuarioId !== auth()['id']) {
+            http_response_code(403);
+            echo 'Acesso negado.';
+            return;
+        }
+
         require BASE_PATH . '/views/vendas/recibo.php';
     }
 }

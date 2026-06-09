@@ -47,6 +47,7 @@
     <div class="card">
         <div class="card-body">
             <form method="POST" action="<?= BASE_URL ?>/produtos/importar" enctype="multipart/form-data">
+                <?= csrfField() ?>
                 <div class="mb-3">
                     <label class="form-label fw-semibold">Arquivo .xlsx</label>
                     <input type="file" name="arquivo" class="form-control" accept=".xlsx" required>

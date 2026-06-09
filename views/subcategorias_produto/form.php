@@ -22,6 +22,7 @@
             <form method="POST"
                   action="<?= BASE_URL . ($subcategoria->id > 0 ? '/produtos/subcategorias/editar/' . $subcategoria->id : '/produtos/subcategorias/nova') ?>"
                   novalidate>
+                <?= csrfField() ?>
                 <div class="mb-3">
                     <label class="form-label fw-semibold">Categoria <span class="text-danger">*</span></label>
                     <select name="categoria_id" class="form-select" required autofocus>

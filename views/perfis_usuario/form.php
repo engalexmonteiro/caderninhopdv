@@ -25,6 +25,7 @@
             <form method="POST"
                   action="<?= BASE_URL . ($perfil->id > 0 ? '/usuarios/perfis/editar/' . $perfil->id : '/usuarios/perfis/novo') ?>"
                   novalidate>
+                <?= csrfField() ?>
                 <div class="row g-3">
                     <div class="col-12">
                         <label class="form-label fw-semibold">Nome <span class="text-danger">*</span></label>

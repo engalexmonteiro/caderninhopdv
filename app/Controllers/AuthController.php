@@ -28,6 +28,8 @@ class AuthController
             redirect('/dashboard');
         }
 
+        verifyCsrf();
+
         $email = trim($_POST['email'] ?? '');
         $senha = $_POST['senha']      ?? '';
 

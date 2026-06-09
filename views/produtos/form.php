@@ -27,6 +27,7 @@ $numberValue = fn (float $value): string => rtrim(rtrim(number_format($value, 3,
     <form method="POST"
           action="<?= BASE_URL . ($produto->id > 0 ? '/produtos/editar/' . $produto->id : '/produtos/novo') ?>"
           novalidate>
+        <?= csrfField() ?>
         <div class="card mb-3">
             <div class="card-header fw-semibold">Dados principais</div>
             <div class="card-body">

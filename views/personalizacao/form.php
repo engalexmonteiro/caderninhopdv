@@ -22,6 +22,7 @@
     <?php endif; ?>
 
     <form method="POST" action="<?= BASE_URL ?>/personalizacao" enctype="multipart/form-data" novalidate>
+        <?= csrfField() ?>
         <div class="card mb-3">
             <div class="card-header bg-white">
                 <i class="bi bi-brush me-2 text-primary"></i>Paleta de cores

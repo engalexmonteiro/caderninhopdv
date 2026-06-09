@@ -67,11 +67,17 @@ class EmpresaService
         $empresa->ativo        = $ativo;
 
         if (!empty($files['logomarca']['tmp_name'])) {
-            $ext = strtolower(pathinfo($files['logomarca']['name'], PATHINFO_EXTENSION));
-            $allowed = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg'];
-            if (!in_array($ext, $allowed, true)) {
-                return ['ok' => false, 'errors' => ['Formato de imagem inválido. Use JPG, PNG, GIF, WebP ou SVG.']];
+            $allowedMimes = [
+                IMAGETYPE_JPEG => 'jpg',
+                IMAGETYPE_PNG  => 'png',
+                IMAGETYPE_GIF  => 'gif',
+                IMAGETYPE_WEBP => 'webp',
+            ];
+            $imageType = exif_imagetype($files['logomarca']['tmp_name']);
+            if ($imageType === false || !isset($allowedMimes[$imageType])) {
+                return ['ok' => false, 'errors' => ['Formato de imagem inválido. Use JPG, PNG, GIF ou WebP.']];
             }
+            $ext = $allowedMimes[$imageType];
 
             $logoDir = BASE_PATH . '/public/assets/logos';
             if (!is_dir($logoDir)) {

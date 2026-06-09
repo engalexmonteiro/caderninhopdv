@@ -2,6 +2,7 @@
 $caixaAberto = $caixa !== null;
 $saldoEsperado = $caixaResumo['saldo_esperado'] ?? 0.0;
 $categoriasPdv = [];
+$tiposPagamentoFiltro = [];
 
 foreach ($produtos as $produto) {
     $categoria = trim($produto->categoriaProduto) !== '' ? trim($produto->categoriaProduto) : 'Sem categoria';
@@ -17,6 +18,12 @@ foreach ($produtos as $produto) {
     $categoriasPdv[$categoria]['total']++;
     $categoriasPdv[$categoria]['subcategorias'][$subcategoria] =
         ($categoriasPdv[$categoria]['subcategorias'][$subcategoria] ?? 0) + 1;
+}
+
+foreach ($tiposPagamento ?? [] as $formaPagamento) {
+    $tipoCodigo = $formaPagamento->tipoCodigo !== '' ? $formaPagamento->tipoCodigo : $formaPagamento->codigo;
+    $tipoNome = $formaPagamento->tipoNome !== '' ? $formaPagamento->tipoNome : $formaPagamento->nome;
+    $tiposPagamentoFiltro[$tipoCodigo] = $tipoNome;
 }
 ?>
 
@@ -215,16 +222,32 @@ foreach ($produtos as $produto) {
 
         <div class="pdv-cart-footer">
             <div class="row g-2 mb-2">
-                <div class="col-6">
+                <div class="col-12">
                     <label class="form-label small fw-semibold mb-1">Desconto (R$)</label>
                     <input type="number" id="desconto" class="form-control form-control-sm"
                            min="0" step="0.01" value="0" oninput="updateTotal()">
                 </div>
                 <div class="col-6">
+                    <label class="form-label small fw-semibold mb-1">Tipo de Pagamento</label>
+                    <select id="tipoPagamentoFiltro" class="form-select form-select-sm" onchange="filterFormaPagamento()">
+                        <option value="">Todos</option>
+                        <?php foreach ($tiposPagamentoFiltro as $tipoCodigo => $tipoNome): ?>
+                        <option value="<?= e($tipoCodigo) ?>"><?= e($tipoNome) ?></option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
+                <div class="col-6">
                     <label class="form-label small fw-semibold mb-1">Forma de Pagamento</label>
                     <select id="formaPagamento" class="form-select form-select-sm" onchange="toggleDinheiro()">
                         <?php foreach ($tiposPagamento ?? [] as $tipo): ?>
-                        <option value="<?= e($tipo->codigo) ?>" data-dinheiro="<?= str_starts_with($tipo->codigo, 'dinheiro') ? '1' : '0' ?>"><?= e($tipo->nome) ?></option>
+                        <?php $tipoCodigo = $tipo->tipoCodigo !== '' ? $tipo->tipoCodigo : $tipo->codigo; ?>
+                        <?php $tipoNome = $tipo->tipoNome !== '' ? $tipo->tipoNome : $tipo->nome; ?>
+                        <option value="<?= e($tipo->codigo) ?>"
+                                data-tipo="<?= e($tipoCodigo) ?>"
+                                data-tipo-nome="<?= e($tipoNome) ?>"
+                                data-dinheiro="<?= str_starts_with($tipo->codigo, 'dinheiro') ? '1' : '0' ?>">
+                            <?= e($tipo->nome) ?>
+                        </option>
                         <?php endforeach; ?>
                     </select>
                 </div>
@@ -306,6 +329,7 @@ foreach ($produtos as $produto) {
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
             <form method="POST" action="<?= BASE_URL ?>/pdv/caixa/abrir">
+                <?= csrfField() ?>
                 <div class="modal-header">
                     <h5 class="modal-title fw-bold"><i class="bi bi-unlock me-2 text-success"></i>Abrir Caixa</h5>
                     <?php if ($caixaAberto): ?><button type="button" class="btn-close" data-bs-dismiss="modal"></button><?php endif; ?>
@@ -334,6 +358,7 @@ foreach ($produtos as $produto) {
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
             <form method="POST" action="<?= BASE_URL ?>/pdv/caixa/sangria">
+                <?= csrfField() ?>
                 <div class="modal-header">
                     <h5 class="modal-title fw-bold"><i class="bi bi-arrow-down-circle me-2 text-danger"></i>Sangria</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
@@ -360,6 +385,7 @@ foreach ($produtos as $produto) {
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
             <form method="POST" action="<?= BASE_URL ?>/pdv/caixa/reforco">
+                <?= csrfField() ?>
                 <div class="modal-header">
                     <h5 class="modal-title fw-bold"><i class="bi bi-arrow-up-circle me-2 text-success"></i>Reforço</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
@@ -386,6 +412,7 @@ foreach ($produtos as $produto) {
     <div class="modal-dialog modal-dialog-centered modal-lg">
         <div class="modal-content">
             <form method="POST" action="<?= BASE_URL ?>/pdv/caixa/fechar">
+                <?= csrfField() ?>
                 <div class="modal-header">
                     <h5 class="modal-title fw-bold"><i class="bi bi-lock me-2 text-secondary"></i>Fechar Caixa</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
@@ -457,7 +484,9 @@ const lastEmpresaStorageKey = 'pdv_last_empresa_id';
 let pagamentosCombinadosAtivo = false;
 const paymentOptions = Array.from(document.querySelectorAll('#formaPagamento option')).map(option => ({
     value: option.value,
-    label: option.textContent,
+    label: option.textContent.trim(),
+    tipo: option.dataset.tipo || '',
+    tipoLabel: option.dataset.tipoNome || option.dataset.tipo || '',
     dinheiro: option.dataset.dinheiro === '1',
 }));
 
@@ -566,6 +595,54 @@ function toggleDinheiro() {
         !pagamentosCombinadosAtivo && selected?.dataset.dinheiro === '1' ? '' : 'none';
 }
 
+function filterFormaPagamento() {
+    const tipo = document.getElementById('tipoPagamentoFiltro').value;
+    const select = document.getElementById('formaPagamento');
+    let selectedVisible = false;
+
+    Array.from(select.options).forEach(option => {
+        const visible = !tipo || option.dataset.tipo === tipo;
+        option.hidden = !visible;
+        option.disabled = !visible;
+        if (option.selected && visible) {
+            selectedVisible = true;
+        }
+    });
+
+    if (!selectedVisible) {
+        const firstVisible = Array.from(select.options).find(option => !option.disabled);
+        if (firstVisible) {
+            select.value = firstVisible.value;
+        }
+    }
+
+    toggleDinheiro();
+}
+
+function filterPagamentoRow(row) {
+    const tipo = row.querySelector('.pagamento-tipo').value;
+    const formaSelect = row.querySelector('.pagamento-forma');
+    let selectedVisible = false;
+
+    Array.from(formaSelect.options).forEach(option => {
+        const visible = !tipo || option.dataset.tipo === tipo;
+        option.hidden = !visible;
+        option.disabled = !visible;
+        if (option.selected && visible) {
+            selectedVisible = true;
+        }
+    });
+
+    if (!selectedVisible) {
+        const firstVisible = Array.from(formaSelect.options).find(option => !option.disabled);
+        if (firstVisible) {
+            formaSelect.value = firstVisible.value;
+        }
+    }
+
+    updatePagamentosCombinados();
+}
+
 function isFormaDinheiro(forma) {
     return paymentOptions.some(option => option.value === forma && option.dinheiro);
 }
@@ -590,18 +667,33 @@ function getPagamentosTotal() {
 function addPagamentoRow(forma = '', valor = '') {
     const container = document.getElementById('pagamentosRows');
     const row = document.createElement('div');
-    row.className = 'pagamento-row d-flex gap-2';
+    row.className = 'pagamento-row d-grid gap-1';
+    const selectedOption = paymentOptions.find(option => option.value === forma);
+    const selectedTipo = selectedOption?.tipo || '';
+    const tipos = [...new Map(paymentOptions.map(option => [option.tipo, option.tipo])).keys()].filter(Boolean);
+    const tiposHtml = ['<option value="">Todos</option>'].concat(
+        tipos.map(tipo => {
+            const label = paymentOptions.find(option => option.tipo === tipo)?.tipoLabel || tipo;
+            return `<option value="${escapeHtml(tipo)}" ${tipo === selectedTipo ? 'selected' : ''}>${escapeHtml(label.replace(/_/g, ' '))}</option>`;
+        })
+    ).join('');
     const optionsHtml = paymentOptions.map(option =>
-        `<option value="${escapeHtml(option.value)}" ${option.value === forma ? 'selected' : ''}>${escapeHtml(option.label)}</option>`
+        `<option value="${escapeHtml(option.value)}" data-tipo="${escapeHtml(option.tipo)}" ${option.value === forma ? 'selected' : ''}>${escapeHtml(option.label)}</option>`
     ).join('');
     row.innerHTML = `
-        <select class="form-select form-select-sm pagamento-forma" onchange="updatePagamentosCombinados()">${optionsHtml}</select>
-        <input type="number" class="form-control form-control-sm pagamento-valor" min="0" step="0.01" value="${escapeHtml(valor)}" oninput="updatePagamentosCombinados()">
-        <button type="button" class="btn btn-sm btn-outline-danger" onclick="removePagamentoRow(this)" title="Remover">
-            <i class="bi bi-x"></i>
-        </button>
+        <div class="d-flex gap-2">
+            <select class="form-select form-select-sm pagamento-tipo" onchange="filterPagamentoRow(this.closest('.pagamento-row'))">${tiposHtml}</select>
+            <button type="button" class="btn btn-sm btn-outline-danger" onclick="removePagamentoRow(this)" title="Remover">
+                <i class="bi bi-x"></i>
+            </button>
+        </div>
+        <div class="d-flex gap-2">
+            <select class="form-select form-select-sm pagamento-forma" onchange="updatePagamentosCombinados()">${optionsHtml}</select>
+            <input type="number" class="form-control form-control-sm pagamento-valor" min="0" step="0.01" value="${escapeHtml(valor)}" oninput="updatePagamentosCombinados()">
+        </div>
     `;
     container.appendChild(row);
+    filterPagamentoRow(row);
     updatePagamentosCombinados();
 }
 
@@ -707,7 +799,10 @@ function finalizarVenda() {
 
     fetch('<?= BASE_URL ?>/pdv/finalizar', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]').content
+        },
         body: JSON.stringify({ itens, desconto: desc, forma_pagamento: forma, valor_pago: pago, total: tot, empresa_id: empresaId, pagamentos })
     })
     .then(r => r.json())
@@ -835,4 +930,5 @@ if (!caixaAberto) {
 }
 
 initEmpresaSelection();
+filterFormaPagamento();
 </script>

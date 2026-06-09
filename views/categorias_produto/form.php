@@ -22,6 +22,7 @@
             <form method="POST"
                   action="<?= BASE_URL . ($categoria->id > 0 ? '/produtos/categorias/editar/' . $categoria->id : '/produtos/categorias/nova') ?>"
                   novalidate>
+                <?= csrfField() ?>
                 <div class="mb-3">
                     <label class="form-label fw-semibold">Nome <span class="text-danger">*</span></label>
                     <input type="text" name="nome" class="form-control" value="<?= e($categoria->nome) ?>" required autofocus>

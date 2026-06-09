@@ -17,6 +17,7 @@
         <?php endif; ?>
 
         <form method="POST" action="<?= BASE_URL ?>/login" novalidate>
+            <?= csrfField() ?>
             <div class="mb-3">
                 <label class="form-label fw-semibold">E-mail</label>
                 <div class="input-group">
@@ -40,8 +41,5 @@
             </button>
         </form>
 
-        <p class="text-center text-muted small mt-4 mb-0">
-            Acesso padrão: <strong>admin@pdv.com</strong> / <strong>admin123</strong>
-        </p>
     </div>
 </div>

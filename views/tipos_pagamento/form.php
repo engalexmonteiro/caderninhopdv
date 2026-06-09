@@ -25,6 +25,7 @@
             <form method="POST"
                   action="<?= BASE_URL . ($tipo->id > 0 ? '/financeiro/tipos-pagamento/editar/' . $tipo->id : '/financeiro/tipos-pagamento/novo') ?>"
                   novalidate>
+                <?= csrfField() ?>
                 <div class="row g-3">
                     <div class="col-md-8">
                         <label class="form-label fw-semibold">Nome <span class="text-danger">*</span></label>
