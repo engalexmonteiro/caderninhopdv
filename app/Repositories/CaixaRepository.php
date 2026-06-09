@@ -94,11 +94,12 @@ class CaixaRepository
     public function resumo(Caixa $caixa): array
     {
         $stmt = $this->pdo->prepare(
-            "SELECT forma_pagamento, COUNT(*) AS quantidade, COALESCE(SUM(total),0) AS total
-             FROM vendas
-             WHERE caixa_id = ? AND status = 'concluida'
-             GROUP BY forma_pagamento
-             ORDER BY forma_pagamento"
+            "SELECT vp.forma_pagamento, COUNT(DISTINCT v.id) AS quantidade, COALESCE(SUM(vp.valor),0) AS total
+             FROM venda_pagamentos vp
+             JOIN vendas v ON v.id = vp.venda_id
+             WHERE v.caixa_id = ? AND v.status = 'concluida'
+             GROUP BY vp.forma_pagamento
+             ORDER BY vp.forma_pagamento"
         );
         $stmt->execute([$caixa->id]);
         $vendasPorForma = array_map(
@@ -114,10 +115,18 @@ class CaixaRepository
         $vendasDinheiro = 0.0;
         foreach ($vendasPorForma as $row) {
             $vendasTotal += $row['total'];
-            if ($row['forma_pagamento'] === 'dinheiro') {
+            if ($row['forma_pagamento'] === 'dinheiro' || str_starts_with($row['forma_pagamento'], 'dinheiro_')) {
                 $vendasDinheiro += $row['total'];
             }
         }
+
+        $stmt = $this->pdo->prepare(
+            "SELECT COALESCE(SUM(troco),0)
+             FROM vendas
+             WHERE caixa_id = ? AND status = 'concluida'"
+        );
+        $stmt->execute([$caixa->id]);
+        $vendasDinheiro = max($vendasDinheiro - (float) $stmt->fetchColumn(), 0);
 
         $stmt = $this->pdo->prepare(
             "SELECT tipo, COALESCE(SUM(valor),0) AS total
@@ -184,5 +193,22 @@ class CaixaRepository
         if (!$column) {
             $this->pdo->exec('ALTER TABLE vendas ADD COLUMN caixa_id INT NULL AFTER empresa_id');
         }
+
+        $this->pdo->exec("CREATE TABLE IF NOT EXISTS venda_pagamentos (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            venda_id INT NOT NULL,
+            forma_pagamento VARCHAR(80) NOT NULL,
+            valor DECIMAL(10,2) NOT NULL DEFAULT 0.00,
+            criado_em DATETIME DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (venda_id) REFERENCES vendas(id)
+        )");
+
+        $this->pdo->exec(
+            "INSERT INTO venda_pagamentos (venda_id, forma_pagamento, valor)
+             SELECT v.id, v.forma_pagamento, v.total
+             FROM vendas v
+             LEFT JOIN venda_pagamentos vp ON vp.venda_id = v.id
+             WHERE vp.id IS NULL"
+        );
     }
 }

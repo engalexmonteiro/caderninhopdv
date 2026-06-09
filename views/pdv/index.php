@@ -1,6 +1,23 @@
 <?php
 $caixaAberto = $caixa !== null;
 $saldoEsperado = $caixaResumo['saldo_esperado'] ?? 0.0;
+$categoriasPdv = [];
+
+foreach ($produtos as $produto) {
+    $categoria = trim($produto->categoriaProduto) !== '' ? trim($produto->categoriaProduto) : 'Sem categoria';
+    $subcategoria = trim($produto->subcategoriaProduto) !== '' ? trim($produto->subcategoriaProduto) : 'Sem subcategoria';
+
+    if (!isset($categoriasPdv[$categoria])) {
+        $categoriasPdv[$categoria] = [
+            'total' => 0,
+            'subcategorias' => [],
+        ];
+    }
+
+    $categoriasPdv[$categoria]['total']++;
+    $categoriasPdv[$categoria]['subcategorias'][$subcategoria] =
+        ($categoriasPdv[$categoria]['subcategorias'][$subcategoria] ?? 0) + 1;
+}
 ?>
 
 <div class="container-fluid pt-3 px-3">
@@ -68,11 +85,54 @@ $saldoEsperado = $caixaResumo['saldo_esperado'] ?? 0.0;
             <input type="text" id="searchProduto" class="form-control shadow-sm"
                    placeholder="&#xF52A;  Buscar produto por nome ou código..." autofocus>
         </div>
+        <?php if (!empty($categoriasPdv)): ?>
+        <div class="pdv-filter-section mb-3">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+                <div class="fw-semibold text-muted small text-uppercase">Categorias</div>
+                <button type="button" class="btn btn-sm btn-outline-secondary" id="clearProductFilters">
+                    <i class="bi bi-grid-3x3-gap me-1"></i>Todas
+                </button>
+            </div>
+            <div class="row g-2" id="categoryCards">
+                <?php foreach ($categoriasPdv as $categoria => $grupo): ?>
+                <div class="col-6 col-md-4 col-xl-3">
+                    <button type="button" class="card pdv-filter-card w-100 text-start"
+                            data-category="<?= e($categoria) ?>">
+                        <span class="fw-bold d-block"><?= e($categoria) ?></span>
+                        <span class="text-muted small"><?= $grupo['total'] ?> produto(s)</span>
+                    </button>
+                </div>
+                <?php endforeach; ?>
+            </div>
+        </div>
+
+        <div class="pdv-filter-section mb-3 d-none" id="subcategorySection">
+            <div class="fw-semibold text-muted small text-uppercase mb-2">Subcategorias</div>
+            <div class="row g-2" id="subcategoryCards">
+                <?php foreach ($categoriasPdv as $categoria => $grupo): ?>
+                    <?php foreach ($grupo['subcategorias'] as $subcategoria => $total): ?>
+                    <div class="col-6 col-md-4 col-xl-3 subcategory-item"
+                         data-category="<?= e($categoria) ?>">
+                        <button type="button" class="card pdv-filter-card w-100 text-start"
+                                data-category="<?= e($categoria) ?>"
+                                data-subcategory="<?= e($subcategoria) ?>">
+                            <span class="fw-bold d-block"><?= e($subcategoria) ?></span>
+                            <span class="text-muted small"><?= $total ?> produto(s)</span>
+                        </button>
+                    </div>
+                    <?php endforeach; ?>
+                <?php endforeach; ?>
+            </div>
+        </div>
+        <?php endif; ?>
+
         <div class="row g-2" id="productGrid">
             <?php foreach ($produtos as $p): ?>
             <div class="col-6 col-md-4 col-xl-3 product-item"
                  data-nome="<?= strtolower(e($p->nome)) ?>"
-                 data-codigo="<?= strtolower(e($p->codigo)) ?>">
+                 data-codigo="<?= strtolower(e($p->codigo)) ?>"
+                 data-categoria="<?= e(trim($p->categoriaProduto) !== '' ? trim($p->categoriaProduto) : 'Sem categoria') ?>"
+                 data-subcategoria="<?= e(trim($p->subcategoriaProduto) !== '' ? trim($p->subcategoriaProduto) : 'Sem subcategoria') ?>">
                 <div class="card product-card h-100 shadow-sm"
                      role="button"
                      data-id="<?= $p->id ?>"
@@ -146,9 +206,31 @@ $saldoEsperado = $caixaResumo['saldo_esperado'] ?? 0.0;
                     <label class="form-label small fw-semibold mb-1">Forma de Pagamento</label>
                     <select id="formaPagamento" class="form-select form-select-sm" onchange="toggleDinheiro()">
                         <?php foreach ($tiposPagamento ?? [] as $tipo): ?>
-                        <option value="<?= e($tipo->codigo) ?>"><?= e($tipo->nome) ?></option>
+                        <option value="<?= e($tipo->codigo) ?>" data-dinheiro="<?= str_starts_with($tipo->codigo, 'dinheiro') ? '1' : '0' ?>"><?= e($tipo->nome) ?></option>
                         <?php endforeach; ?>
                     </select>
+                </div>
+            </div>
+
+            <div class="d-flex justify-content-between align-items-center mb-2">
+                <small class="text-muted">Pagamento combinado</small>
+                <button type="button" class="btn btn-sm btn-outline-primary" id="btnTogglePagamentos" onclick="togglePagamentosCombinados()">
+                    <i class="bi bi-plus-circle me-1"></i>Combinar
+                </button>
+            </div>
+
+            <div id="pagamentosCombinados" class="mb-2 d-none">
+                <div id="pagamentosRows" class="d-grid gap-2"></div>
+                <button type="button" class="btn btn-sm btn-outline-secondary w-100 mt-2" onclick="addPagamentoRow()">
+                    <i class="bi bi-plus-lg me-1"></i>Adicionar pagamento
+                </button>
+                <div class="d-flex justify-content-between mt-2">
+                    <small class="text-muted">Pago:</small>
+                    <small class="fw-bold" id="pagamentosTotalDisplay">R$ 0,00</small>
+                </div>
+                <div class="d-flex justify-content-between">
+                    <small class="text-muted">Restante:</small>
+                    <small class="fw-bold text-danger" id="pagamentosRestanteDisplay">R$ 0,00</small>
                 </div>
             </div>
 
@@ -347,6 +429,15 @@ $saldoEsperado = $caixaResumo['saldo_esperado'] ?? 0.0;
 <script>
 const cart = {};
 const caixaAberto = <?= $caixaAberto ? 'true' : 'false' ?>;
+let selectedCategory = '';
+let selectedSubcategory = '';
+const lastEmpresaStorageKey = 'pdv_last_empresa_id';
+let pagamentosCombinadosAtivo = false;
+const paymentOptions = Array.from(document.querySelectorAll('#formaPagamento option')).map(option => ({
+    value: option.value,
+    label: option.textContent,
+    dinheiro: option.dataset.dinheiro === '1',
+}));
 
 const fmt = v => 'R$ ' + v.toFixed(2).replace('.', ',').replace(/\B(?=(\d{3})+(?!\d))/g, '.');
 const escapeHtml = value => String(value).replace(/[&<>"']/g, char => ({
@@ -432,6 +523,7 @@ function updateTotal() {
     const tot  = Math.max(sub - desc, 0);
     document.getElementById('subtotalDisplay').textContent = fmt(sub);
     document.getElementById('totalDisplay').textContent    = fmt(tot);
+    updatePagamentosCombinados();
     updateTroco();
 }
 
@@ -439,13 +531,104 @@ function updateTroco() {
     const sub  = getSubtotal();
     const desc = Math.min(parseFloat(document.getElementById('desconto').value) || 0, sub);
     const tot  = Math.max(sub - desc, 0);
-    const pago = parseFloat(document.getElementById('valorPago').value) || 0;
+    const forma = document.getElementById('formaPagamento').value;
+    const pago = pagamentosCombinadosAtivo
+        ? getPagamentosTotal()
+        : (isFormaDinheiro(forma) ? (parseFloat(document.getElementById('valorPago').value) || 0) : tot);
     document.getElementById('trocoDisplay').textContent = fmt(Math.max(pago - tot, 0));
 }
 
 function toggleDinheiro() {
+    const selected = document.getElementById('formaPagamento').selectedOptions[0];
     document.getElementById('dinheiroRow').style.display =
-        document.getElementById('formaPagamento').value === 'dinheiro' ? '' : 'none';
+        !pagamentosCombinadosAtivo && selected?.dataset.dinheiro === '1' ? '' : 'none';
+}
+
+function isFormaDinheiro(forma) {
+    return paymentOptions.some(option => option.value === forma && option.dinheiro);
+}
+
+function getTotalVenda() {
+    const sub = getSubtotal();
+    const desc = Math.min(parseFloat(document.getElementById('desconto').value) || 0, sub);
+    return Math.max(sub - desc, 0);
+}
+
+function getPagamentosRows() {
+    return Array.from(document.querySelectorAll('.pagamento-row')).map(row => ({
+        forma_pagamento: row.querySelector('.pagamento-forma').value,
+        valor: parseFloat(row.querySelector('.pagamento-valor').value) || 0,
+    })).filter(pagamento => pagamento.forma_pagamento && pagamento.valor > 0);
+}
+
+function getPagamentosTotal() {
+    return getPagamentosRows().reduce((total, pagamento) => total + pagamento.valor, 0);
+}
+
+function addPagamentoRow(forma = '', valor = '') {
+    const container = document.getElementById('pagamentosRows');
+    const row = document.createElement('div');
+    row.className = 'pagamento-row d-flex gap-2';
+    const optionsHtml = paymentOptions.map(option =>
+        `<option value="${escapeHtml(option.value)}" ${option.value === forma ? 'selected' : ''}>${escapeHtml(option.label)}</option>`
+    ).join('');
+    row.innerHTML = `
+        <select class="form-select form-select-sm pagamento-forma" onchange="updatePagamentosCombinados()">${optionsHtml}</select>
+        <input type="number" class="form-control form-control-sm pagamento-valor" min="0" step="0.01" value="${escapeHtml(valor)}" oninput="updatePagamentosCombinados()">
+        <button type="button" class="btn btn-sm btn-outline-danger" onclick="removePagamentoRow(this)" title="Remover">
+            <i class="bi bi-x"></i>
+        </button>
+    `;
+    container.appendChild(row);
+    updatePagamentosCombinados();
+}
+
+function removePagamentoRow(button) {
+    button.closest('.pagamento-row')?.remove();
+    updatePagamentosCombinados();
+}
+
+function togglePagamentosCombinados() {
+    pagamentosCombinadosAtivo = !pagamentosCombinadosAtivo;
+    document.getElementById('pagamentosCombinados').classList.toggle('d-none', !pagamentosCombinadosAtivo);
+    document.getElementById('btnTogglePagamentos').innerHTML = pagamentosCombinadosAtivo
+        ? '<i class="bi bi-x-circle me-1"></i>Usar simples'
+        : '<i class="bi bi-plus-circle me-1"></i>Combinar';
+
+    if (pagamentosCombinadosAtivo && document.querySelectorAll('.pagamento-row').length === 0) {
+        addPagamentoRow(document.getElementById('formaPagamento').value, getTotalVenda().toFixed(2));
+    }
+
+    toggleDinheiro();
+    updatePagamentosCombinados();
+}
+
+function updatePagamentosCombinados() {
+    if (!pagamentosCombinadosAtivo) return;
+    const total = getTotalVenda();
+    const pago = getPagamentosTotal();
+    document.getElementById('pagamentosTotalDisplay').textContent = fmt(pago);
+    document.getElementById('pagamentosRestanteDisplay').textContent = fmt(Math.max(total - pago, 0));
+    updateTroco();
+}
+
+function initEmpresaSelection() {
+    const select = document.getElementById('empresaId');
+    if (!select || select.tagName !== 'SELECT') return;
+
+    const options = Array.from(select.options).filter(option => option.value !== '0');
+    if (options.length === 0) return;
+
+    const savedEmpresaId = localStorage.getItem(lastEmpresaStorageKey);
+    const savedOption = savedEmpresaId ? options.find(option => option.value === savedEmpresaId) : null;
+    select.value = savedOption ? savedOption.value : options[0].value;
+    localStorage.setItem(lastEmpresaStorageKey, select.value);
+
+    select.addEventListener('change', () => {
+        if (select.value !== '0') {
+            localStorage.setItem(lastEmpresaStorageKey, select.value);
+        }
+    });
 }
 
 function finalizarVenda() {
@@ -460,11 +643,24 @@ function finalizarVenda() {
     const desc  = Math.min(parseFloat(document.getElementById('desconto').value) || 0, sub);
     const tot   = Math.max(sub - desc, 0);
     const forma = document.getElementById('formaPagamento').value;
-    const pago  = forma === 'dinheiro' ? (parseFloat(document.getElementById('valorPago').value) || 0) : tot;
+    const pagamentos = pagamentosCombinadosAtivo ? getPagamentosRows() : [];
+    const pago  = pagamentosCombinadosAtivo
+        ? getPagamentosTotal()
+        : (isFormaDinheiro(forma) ? (parseFloat(document.getElementById('valorPago').value) || 0) : tot);
 
-    if (forma === 'dinheiro' && pago < tot) {
+    if (pago < tot) {
         alert('Valor pago insuficiente! Total: ' + fmt(tot));
         return;
+    }
+
+    if (pagamentosCombinadosAtivo) {
+        const valorDinheiro = pagamentos.reduce((sum, pagamento) =>
+            sum + (isFormaDinheiro(pagamento.forma_pagamento) ? pagamento.valor : 0), 0);
+        const troco = Math.max(pago - tot, 0);
+        if (troco > valorDinheiro) {
+            alert('Troco maior que o valor pago em dinheiro.');
+            return;
+        }
     }
 
     const itens = Object.entries(cart).map(([id, item]) => ({
@@ -481,12 +677,16 @@ function finalizarVenda() {
     btn.disabled = true;
     btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Processando...';
 
-    const empresaId = parseInt(document.getElementById('empresaId').value) || 0;
+    const empresaSelect = document.getElementById('empresaId');
+    const empresaId = parseInt(empresaSelect.value) || 0;
+    if (empresaSelect.tagName === 'SELECT' && empresaId > 0) {
+        localStorage.setItem(lastEmpresaStorageKey, String(empresaId));
+    }
 
     fetch('<?= BASE_URL ?>/pdv/finalizar', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ itens, desconto: desc, forma_pagamento: forma, valor_pago: pago, total: tot, empresa_id: empresaId })
+        body: JSON.stringify({ itens, desconto: desc, forma_pagamento: forma, valor_pago: pago, total: tot, empresa_id: empresaId, pagamentos })
     })
     .then(r => r.json())
     .then(data => {
@@ -500,7 +700,7 @@ function finalizarVenda() {
             const troco = Math.max(pago - tot, 0);
             document.getElementById('resumoVenda').innerHTML =
                 `Venda <strong>#${data.venda_id}</strong> — Total: <strong>${fmt(tot)}</strong>` +
-                (forma === 'dinheiro' ? ` — Troco: <strong>${fmt(troco)}</strong>` : '');
+                (troco > 0 ? ` - Troco: <strong>${fmt(troco)}</strong>` : '');
             new bootstrap.Modal(document.getElementById('modalSucesso')).show();
         } else {
             if (reciboWindow) reciboWindow.close();
@@ -521,19 +721,78 @@ function novaVenda() {
     clearCart();
     document.getElementById('desconto').value  = 0;
     document.getElementById('valorPago').value = 0;
-    document.getElementById('formaPagamento').value = 'dinheiro';
-    document.getElementById('dinheiroRow').style.display = '';
+    if (document.querySelector('#formaPagamento option[value="dinheiro"]')) {
+        document.getElementById('formaPagamento').value = 'dinheiro';
+    }
+    pagamentosCombinadosAtivo = false;
+    document.getElementById('pagamentosRows').innerHTML = '';
+    document.getElementById('pagamentosCombinados').classList.add('d-none');
+    document.getElementById('btnTogglePagamentos').innerHTML = '<i class="bi bi-plus-circle me-1"></i>Combinar';
+    toggleDinheiro();
     document.getElementById('btnFinalizar').innerHTML = '<i class="bi bi-check-circle me-2"></i>Finalizar Venda';
     bootstrap.Modal.getInstance(document.getElementById('modalSucesso')).hide();
     location.reload();
 }
 
-document.getElementById('searchProduto').addEventListener('input', function () {
-    const q = this.value.toLowerCase().trim();
+function applyProductFilters() {
+    const q = document.getElementById('searchProduto').value.toLowerCase().trim();
+
     document.querySelectorAll('.product-item').forEach(el => {
-        el.style.display = (!q || el.dataset.nome.includes(q) || el.dataset.codigo.includes(q)) ? '' : 'none';
+        const matchesSearch = !q || el.dataset.nome.includes(q) || el.dataset.codigo.includes(q);
+        const matchesCategory = !selectedCategory || el.dataset.categoria === selectedCategory;
+        const matchesSubcategory = !selectedSubcategory || el.dataset.subcategoria === selectedSubcategory;
+        el.style.display = matchesSearch && matchesCategory && matchesSubcategory ? '' : 'none';
+    });
+}
+
+function renderCategoryFilters() {
+    document.querySelectorAll('#categoryCards .pdv-filter-card').forEach(card => {
+        card.classList.toggle('active', card.dataset.category === selectedCategory);
+    });
+
+    document.querySelectorAll('#subcategoryCards .subcategory-item').forEach(item => {
+        item.classList.toggle('d-none', item.dataset.category !== selectedCategory);
+    });
+
+    document.querySelectorAll('#subcategoryCards .pdv-filter-card').forEach(card => {
+        card.classList.toggle('active', card.dataset.subcategory === selectedSubcategory);
+    });
+
+    const subcategorySection = document.getElementById('subcategorySection');
+    if (subcategorySection) {
+        subcategorySection.classList.toggle('d-none', selectedCategory === '');
+    }
+}
+
+document.getElementById('searchProduto').addEventListener('input', applyProductFilters);
+
+document.querySelectorAll('#categoryCards .pdv-filter-card').forEach(card => {
+    card.addEventListener('click', () => {
+        selectedCategory = card.dataset.category;
+        selectedSubcategory = '';
+        renderCategoryFilters();
+        applyProductFilters();
     });
 });
+
+document.querySelectorAll('#subcategoryCards .pdv-filter-card').forEach(card => {
+    card.addEventListener('click', () => {
+        selectedCategory = card.dataset.category;
+        selectedSubcategory = card.dataset.subcategory;
+        renderCategoryFilters();
+        applyProductFilters();
+    });
+});
+
+const clearProductFilters = document.getElementById('clearProductFilters');
+if (clearProductFilters) {
+    clearProductFilters.addEventListener('click', () => {
+        selectedCategory = '';
+        selectedSubcategory = '';
+        renderCategoryFilters();
+        applyProductFilters();
+    });
+}
 
 document.querySelectorAll('.product-card').forEach(card => {
     card.addEventListener('click', () => {
@@ -552,4 +811,6 @@ if (!caixaAberto) {
         new bootstrap.Modal(document.getElementById('modalAbrirCaixa')).show();
     });
 }
+
+initEmpresaSelection();
 </script>

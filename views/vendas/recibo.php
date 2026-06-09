@@ -144,7 +144,12 @@ body {
     <div class="row"><span>Desconto</span><span><?= money($venda->desconto) ?></span></div>
     <div class="row bold"><span>TOTAL</span><span><?= money($venda->total) ?></span></div>
     <div class="row"><span>Pagamento</span><span><?= e(App\Models\Venda::formaLabel($venda->formaPagamento)) ?></span></div>
-    <?php if ($venda->formaPagamento === 'dinheiro'): ?>
+    <?php if (!empty($venda->pagamentos)): ?>
+    <?php foreach ($venda->pagamentos as $pagamento): ?>
+    <div class="row"><span><?= e(App\Models\Venda::formaLabel($pagamento->formaPagamento)) ?></span><span><?= money($pagamento->valor) ?></span></div>
+    <?php endforeach; ?>
+    <?php endif; ?>
+    <?php if ($venda->troco > 0 || $venda->formaPagamento === 'dinheiro'): ?>
     <div class="row"><span>Valor pago</span><span><?= money($venda->valorPago) ?></span></div>
     <div class="row"><span>Troco</span><span><?= money($venda->troco) ?></span></div>
     <?php endif; ?>

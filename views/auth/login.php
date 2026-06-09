@@ -1,8 +1,12 @@
 <div class="login-wrapper">
     <div class="login-card card shadow-lg">
         <div class="text-center mb-4">
+            <?php if (($__personalizacao->logoLogin ?? '') !== ''): ?>
+            <img src="<?= assetUrl($__personalizacao->logoLogin) ?>" alt="<?= e($__appName) ?>" class="login-logo-img mb-2">
+            <?php else: ?>
             <div class="login-logo"><i class="bi bi-shop-window"></i></div>
-            <h3 class="fw-bold mt-2 text-primary">PDV Sistema</h3>
+            <?php endif; ?>
+            <h3 class="fw-bold mt-2 text-primary"><?= e($__appName) ?></h3>
             <p class="text-muted small">Ponto de Venda</p>
         </div>
 

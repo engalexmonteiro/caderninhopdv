@@ -3,27 +3,35 @@
 namespace App\Controllers;
 
 use App\Models\Usuario;
+use App\Repositories\PerfilUsuarioRepository;
 use App\Repositories\UsuarioRepository;
 use App\Services\AuthService;
+use App\Services\PerfilUsuarioService;
 use App\Services\UsuarioService;
 
 class UsuarioController
 {
     private UsuarioService $service;
+    private PerfilUsuarioService $perfilService;
 
     public function __construct()
     {
-        $repo          = new UsuarioRepository(getDB());
-        $this->service = new UsuarioService($repo, new AuthService($repo));
+        $pdo = getDB();
+        $repo = new UsuarioRepository($pdo);
+        $perfilRepo = new PerfilUsuarioRepository($pdo);
+
+        $this->service = new UsuarioService($repo, new AuthService($repo), $perfilRepo);
+        $this->perfilService = new PerfilUsuarioService($perfilRepo);
     }
 
     public function index(): void
     {
         requireAdmin();
         render('usuarios/lista', [
-            'pageTitle' => 'Usuários',
-            'usuarios'  => $this->service->listar(),
-            'flash'     => flash('usuario'),
+            'pageTitle' => 'Usuarios',
+            'usuarios' => $this->service->listar(),
+            'perfis' => $this->perfilService->listar(),
+            'flash' => flash('usuario'),
         ]);
     }
 
@@ -31,9 +39,10 @@ class UsuarioController
     {
         requireAdmin();
         render('usuarios/form', [
-            'pageTitle' => 'Novo Usuário',
-            'usuario'   => new Usuario(),
-            'errors'    => [],
+            'pageTitle' => 'Novo Usuario',
+            'usuario' => new Usuario(),
+            'perfis' => $this->perfilService->listarAtivos(),
+            'errors' => [],
         ]);
     }
 
@@ -44,21 +53,22 @@ class UsuarioController
         $result = $this->service->salvar($_POST);
 
         if (!$result['ok']) {
-            $u         = new Usuario();
-            $u->nome   = trim($_POST['nome']   ?? '');
-            $u->email  = trim($_POST['email']  ?? '');
-            $u->perfil = $_POST['perfil'] === 'admin' ? 'admin' : 'usuario';
-            $u->ativo  = isset($_POST['ativo']);
+            $u = new Usuario();
+            $u->nome = trim($_POST['nome'] ?? '');
+            $u->email = trim($_POST['email'] ?? '');
+            $u->perfil = trim($_POST['perfil'] ?? 'usuario');
+            $u->ativo = isset($_POST['ativo']);
 
             render('usuarios/form', [
-                'pageTitle' => 'Novo Usuário',
-                'usuario'   => $u,
-                'errors'    => $result['errors'],
+                'pageTitle' => 'Novo Usuario',
+                'usuario' => $u,
+                'perfis' => $this->perfilService->listarAtivos(),
+                'errors' => $result['errors'],
             ]);
             return;
         }
 
-        redirect('/usuarios', 'usuario', 'Usuário cadastrado com sucesso.');
+        redirect('/usuarios', 'usuario', 'Usuario cadastrado com sucesso.');
     }
 
     public function edit(string $id): void
@@ -71,9 +81,10 @@ class UsuarioController
         }
 
         render('usuarios/form', [
-            'pageTitle' => 'Editar Usuário',
-            'usuario'   => $usuario,
-            'errors'    => [],
+            'pageTitle' => 'Editar Usuario',
+            'usuario' => $usuario,
+            'perfis' => $this->perfilService->listar(),
+            'errors' => [],
         ]);
     }
 
@@ -84,33 +95,33 @@ class UsuarioController
         $result = $this->service->salvar($_POST, (int) $id);
 
         if (!$result['ok']) {
-            $usuario         = $this->service->buscarPorId((int) $id) ?? new Usuario();
-            $usuario->nome   = trim($_POST['nome']   ?? '');
-            $usuario->email  = trim($_POST['email']  ?? '');
-            $usuario->perfil = $_POST['perfil'] === 'admin' ? 'admin' : 'usuario';
-            $usuario->ativo  = isset($_POST['ativo']);
+            $usuario = $this->service->buscarPorId((int) $id) ?? new Usuario();
+            $usuario->nome = trim($_POST['nome'] ?? '');
+            $usuario->email = trim($_POST['email'] ?? '');
+            $usuario->perfil = trim($_POST['perfil'] ?? 'usuario');
+            $usuario->ativo = isset($_POST['ativo']);
 
             render('usuarios/form', [
-                'pageTitle' => 'Editar Usuário',
-                'usuario'   => $usuario,
-                'errors'    => $result['errors'],
+                'pageTitle' => 'Editar Usuario',
+                'usuario' => $usuario,
+                'perfis' => $this->perfilService->listar(),
+                'errors' => $result['errors'],
             ]);
             return;
         }
 
-        redirect('/usuarios', 'usuario', 'Usuário atualizado com sucesso.');
+        redirect('/usuarios', 'usuario', 'Usuario atualizado com sucesso.');
     }
 
     public function toggle(string $id): void
     {
         requireAdmin();
 
-        // Impede desativar o próprio usuário
         if ((int) $id === auth()['id']) {
-            redirect('/usuarios', 'usuario', 'Você não pode desativar seu próprio usuário.');
+            redirect('/usuarios', 'usuario', 'Voce nao pode desativar seu proprio usuario.');
         }
 
         $this->service->toggle((int) $id);
-        redirect('/usuarios', 'usuario', 'Status do usuário alterado.');
+        redirect('/usuarios', 'usuario', 'Status do usuario alterado.');
     }
 }

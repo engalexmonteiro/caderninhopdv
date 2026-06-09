@@ -71,3 +71,36 @@ function formatCnpj(string $cnpj): string {
     return substr($c, 0, 2) . '.' . substr($c, 2, 3) . '.' . substr($c, 5, 3)
          . '/' . substr($c, 8, 4) . '-' . substr($c, 12, 2);
 }
+
+function appContext(): array {
+    static $context = null;
+    if ($context !== null) {
+        return $context;
+    }
+
+    try {
+        $pdo = getDB();
+        $empresaRepo = new App\Repositories\EmpresaRepository($pdo);
+        $service = new App\Services\PersonalizacaoService(
+            new App\Repositories\PersonalizacaoRepository($pdo),
+            $empresaRepo
+        );
+        $context = $service->contexto();
+    } catch (Throwable) {
+        $context = [
+            'personalizacao' => new App\Models\Personalizacao(),
+            'nomeAplicacao' => 'PDV Sistema',
+            'paleta' => App\Services\PersonalizacaoService::PALETAS['azul'],
+        ];
+    }
+
+    return $context;
+}
+
+function appName(): string {
+    return appContext()['nomeAplicacao'] ?? 'PDV Sistema';
+}
+
+function assetUrl(string $path): string {
+    return BASE_URL . '/' . ltrim($path, '/');
+}

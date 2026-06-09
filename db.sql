@@ -23,9 +23,29 @@ CREATE TABLE usuarios (
     nome VARCHAR(100) NOT NULL,
     email VARCHAR(150) NOT NULL UNIQUE,
     senha VARCHAR(255) NOT NULL,
-    perfil ENUM('admin','usuario') NOT NULL DEFAULT 'usuario',
+    perfil VARCHAR(50) NOT NULL DEFAULT 'usuario',
     ativo TINYINT(1) NOT NULL DEFAULT 1,
     criado_em DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE perfis_usuario (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    codigo VARCHAR(50) NOT NULL UNIQUE,
+    nome VARCHAR(120) NOT NULL,
+    ativo TINYINT(1) NOT NULL DEFAULT 1,
+    criado_em DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE personalizacao (
+    id INT PRIMARY KEY,
+    paleta VARCHAR(30) NOT NULL DEFAULT 'azul',
+    cor_primaria VARCHAR(7) NOT NULL DEFAULT '#0d6efd',
+    cor_sucesso VARCHAR(7) NOT NULL DEFAULT '#198754',
+    modo_noturno TINYINT(1) NOT NULL DEFAULT 0,
+    empresa_id INT NULL,
+    logo_login VARCHAR(255) NOT NULL DEFAULT '',
+    favicon VARCHAR(255) NOT NULL DEFAULT '',
+    atualizado_em DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
 
 CREATE TABLE tipos_pagamento (
@@ -35,6 +55,18 @@ CREATE TABLE tipos_pagamento (
     ordem INT NOT NULL DEFAULT 0,
     ativo TINYINT(1) NOT NULL DEFAULT 1,
     criado_em DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE formas_pagamento (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    tipo_pagamento_id INT NOT NULL,
+    codigo VARCHAR(80) NOT NULL UNIQUE,
+    nome VARCHAR(150) NOT NULL,
+    parcelas INT NOT NULL DEFAULT 1,
+    ordem INT NOT NULL DEFAULT 0,
+    ativo TINYINT(1) NOT NULL DEFAULT 1,
+    criado_em DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (tipo_pagamento_id) REFERENCES tipos_pagamento(id)
 );
 
 CREATE TABLE categorias_produto (
@@ -105,7 +137,7 @@ CREATE TABLE vendas (
     caixa_id INT NULL,
     total DECIMAL(10,2) NOT NULL DEFAULT 0.00,
     desconto DECIMAL(10,2) NOT NULL DEFAULT 0.00,
-    forma_pagamento VARCHAR(50) NOT NULL DEFAULT 'dinheiro',
+    forma_pagamento VARCHAR(80) NOT NULL DEFAULT 'dinheiro',
     valor_pago DECIMAL(10,2) NOT NULL DEFAULT 0.00,
     troco DECIMAL(10,2) NOT NULL DEFAULT 0.00,
     status ENUM('concluida','cancelada') NOT NULL DEFAULT 'concluida',
@@ -155,6 +187,15 @@ CREATE TABLE venda_itens (
     FOREIGN KEY (produto_id) REFERENCES produtos(id)
 );
 
+CREATE TABLE venda_pagamentos (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    venda_id INT NOT NULL,
+    forma_pagamento VARCHAR(80) NOT NULL,
+    valor DECIMAL(10,2) NOT NULL DEFAULT 0.00,
+    criado_em DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (venda_id) REFERENCES vendas(id)
+);
+
 -- Usuario admin inserido via setup.php (veja instrucoes no README)
 
 INSERT INTO tipos_pagamento (codigo, nome, ordem, ativo) VALUES
@@ -162,6 +203,16 @@ INSERT INTO tipos_pagamento (codigo, nome, ordem, ativo) VALUES
 ('cartao_credito', 'Cartao Credito', 20, 1),
 ('cartao_debito', 'Cartao Debito', 30, 1),
 ('pix', 'PIX', 40, 1);
+
+INSERT INTO formas_pagamento (tipo_pagamento_id, codigo, nome, parcelas, ordem, ativo)
+SELECT id, codigo, nome, 1, ordem, ativo FROM tipos_pagamento;
+
+INSERT INTO perfis_usuario (codigo, nome, ativo) VALUES
+('admin', 'Administrador', 1),
+('usuario', 'Usuario', 1);
+
+INSERT INTO personalizacao (id, paleta, cor_primaria, cor_sucesso, modo_noturno, empresa_id, logo_login, favicon)
+VALUES (1, 'azul', '#0d6efd', '#198754', 0, NULL, '', '');
 
 -- Produtos de exemplo
 INSERT INTO produtos

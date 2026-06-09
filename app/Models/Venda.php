@@ -30,6 +30,9 @@ class Venda
     /** @var VendaItem[] */
     public array $itens = [];
 
+    /** @var VendaPagamento[] */
+    public array $pagamentos = [];
+
     public static function fromArray(array $row): self
     {
         $v                 = new self();
@@ -60,6 +63,10 @@ class Venda
 
     public static function formaLabel(string $forma): string
     {
+        if ($forma === 'combinado') {
+            return 'Combinado';
+        }
+
         if (!in_array($forma, ['dinheiro', 'cartao_credito', 'cartao_debito', 'pix'], true)) {
             return ucwords(str_replace('_', ' ', $forma));
         }

@@ -1,8 +1,15 @@
 <div class="container-fluid py-4">
+    <?php
+    $perfisPorCodigo = [];
+    foreach ($perfis ?? [] as $perfil) {
+        $perfisPorCodigo[$perfil->codigo] = $perfil->nome;
+    }
+    ?>
+
     <div class="d-flex justify-content-between align-items-center mb-4">
-        <h4 class="mb-0 fw-bold"><i class="bi bi-people me-2 text-primary"></i>Usuários</h4>
+        <h4 class="mb-0 fw-bold"><i class="bi bi-people me-2 text-primary"></i>Usuarios</h4>
         <a href="<?= BASE_URL ?>/usuarios/novo" class="btn btn-primary">
-            <i class="bi bi-plus-lg me-1"></i>Novo Usuário
+            <i class="bi bi-plus-lg me-1"></i>Novo Usuario
         </a>
     </div>
 
@@ -22,7 +29,7 @@
                             <th>#</th><th>Nome</th><th>E-mail</th>
                             <th class="text-center">Perfil</th>
                             <th class="text-center">Status</th>
-                            <th class="text-center">Ações</th>
+                            <th class="text-center">Acoes</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -34,7 +41,7 @@
                             <td class="text-center">
                                 <span class="badge <?= $u->perfil === 'admin' ? 'badge-admin' : 'badge-usuario' ?>">
                                     <i class="bi bi-<?= $u->perfil === 'admin' ? 'shield-check' : 'person' ?> me-1"></i>
-                                    <?= $u->perfil === 'admin' ? 'Administrador' : 'Usuário' ?>
+                                    <?= e($perfisPorCodigo[$u->perfil] ?? $u->perfil) ?>
                                 </span>
                             </td>
                             <td class="text-center">
@@ -61,6 +68,6 @@
                 </table>
             </div>
         </div>
-        <div class="card-footer text-muted small"><?= count($usuarios) ?> usuário(s)</div>
+        <div class="card-footer text-muted small"><?= count($usuarios) ?> usuario(s)</div>
     </div>
 </div>

@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\Venda;
 use App\Models\VendaItem;
+use App\Models\VendaPagamento;
 use App\Repositories\ProdutoRepository;
 use App\Repositories\VendaRepository;
 
@@ -27,7 +28,8 @@ class VendaService
         float  $valorPago,
         int    $usuarioId,
         int    $empresaId = 0,
-        int    $caixaId = 0
+        int    $caixaId = 0,
+        array  $pagamentosInput = []
     ): array {
         if (empty($itensInput)) {
             return ['ok' => false, 'venda_id' => 0, 'erro' => 'Carrinho vazio.'];
@@ -79,10 +81,21 @@ class VendaService
 
         $desconto = min(max($desconto, 0), $subtotal);
         $total    = round($subtotal - $desconto, 2);
-        $troco    = $formaPagamento === 'dinheiro' ? max(round($valorPago - $total, 2), 0) : 0.0;
 
-        if ($formaPagamento === 'dinheiro' && $valorPago < $total) {
+        $pagamentos = $this->normalizarPagamentos($pagamentosInput, $formaPagamento, $valorPago, $total);
+        $valorPagoTotal = round(array_sum(array_map(fn (VendaPagamento $p): float => $p->valor, $pagamentos)), 2);
+        $valorDinheiro = round(array_sum(array_map(
+            fn (VendaPagamento $p): float => $this->isDinheiro($p->formaPagamento) ? $p->valor : 0.0,
+            $pagamentos
+        )), 2);
+        $troco = max(round($valorPagoTotal - $total, 2), 0);
+
+        if ($valorPagoTotal < $total) {
             return ['ok' => false, 'venda_id' => 0, 'erro' => 'Valor pago insuficiente.'];
+        }
+
+        if ($troco > 0 && $valorDinheiro < $troco) {
+            return ['ok' => false, 'venda_id' => 0, 'erro' => 'Troco maior que o valor pago em dinheiro.'];
         }
 
         // Deduzir estoque de produtos que controlam quantidade.
@@ -107,10 +120,11 @@ class VendaService
         $venda->caixaId       = $caixaId;
         $venda->total         = $total;
         $venda->desconto      = $desconto;
-        $venda->formaPagamento = $formaPagamento;
-        $venda->valorPago     = $formaPagamento === 'dinheiro' ? $valorPago : $total;
+        $venda->formaPagamento = count($pagamentos) > 1 ? 'combinado' : $pagamentos[0]->formaPagamento;
+        $venda->valorPago     = $valorPagoTotal;
         $venda->troco         = $troco;
         $venda->itens         = $itens;
+        $venda->pagamentos    = $pagamentos;
 
         try {
             $vendaId = $this->vendas->save($venda);
@@ -118,6 +132,41 @@ class VendaService
         } catch (\Throwable $e) {
             return ['ok' => false, 'venda_id' => 0, 'erro' => 'Erro ao salvar venda: ' . $e->getMessage()];
         }
+    }
+
+    /**
+     * @return VendaPagamento[]
+     */
+    private function normalizarPagamentos(array $pagamentosInput, string $formaPagamento, float $valorPago, float $total): array
+    {
+        $pagamentos = [];
+
+        foreach ($pagamentosInput as $input) {
+            $forma = trim((string) ($input['forma_pagamento'] ?? ''));
+            $valor = round((float) ($input['valor'] ?? 0), 2);
+            if ($forma === '' || $valor <= 0) {
+                continue;
+            }
+
+            $pagamento = new VendaPagamento();
+            $pagamento->formaPagamento = $forma;
+            $pagamento->valor = $valor;
+            $pagamentos[] = $pagamento;
+        }
+
+        if (!empty($pagamentos)) {
+            return $pagamentos;
+        }
+
+        $pagamento = new VendaPagamento();
+        $pagamento->formaPagamento = $formaPagamento;
+        $pagamento->valor = $this->isDinheiro($formaPagamento) ? $valorPago : $total;
+        return [$pagamento];
+    }
+
+    private function isDinheiro(string $formaPagamento): bool
+    {
+        return $formaPagamento === 'dinheiro' || str_starts_with($formaPagamento, 'dinheiro_');
     }
 
     public function relatorio(string $dataInicio, string $dataFim, int $empresaId = 0): array

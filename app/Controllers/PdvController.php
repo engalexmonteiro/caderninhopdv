@@ -4,13 +4,14 @@ namespace App\Controllers;
 
 use App\Repositories\CaixaRepository;
 use App\Repositories\EmpresaRepository;
+use App\Repositories\FormaPagamentoRepository;
 use App\Repositories\ProdutoRepository;
 use App\Repositories\TipoPagamentoRepository;
 use App\Repositories\VendaRepository;
 use App\Services\CaixaService;
 use App\Services\EmpresaService;
+use App\Services\FormaPagamentoService;
 use App\Services\ProdutoService;
-use App\Services\TipoPagamentoService;
 use App\Services\VendaService;
 
 class PdvController
@@ -18,7 +19,7 @@ class PdvController
     private VendaService   $vendaService;
     private ProdutoService $produtoService;
     private EmpresaService $empresaService;
-    private TipoPagamentoService $tipoPagamentoService;
+    private FormaPagamentoService $formaPagamentoService;
     private CaixaService $caixaService;
 
     public function __construct()
@@ -28,7 +29,8 @@ class PdvController
         $this->produtoService  = new ProdutoService($produtoRepo);
         $this->vendaService    = new VendaService(new VendaRepository($pdo), $produtoRepo);
         $this->empresaService  = new EmpresaService(new EmpresaRepository($pdo));
-        $this->tipoPagamentoService = new TipoPagamentoService(new TipoPagamentoRepository($pdo));
+        $tipoRepo = new TipoPagamentoRepository($pdo);
+        $this->formaPagamentoService = new FormaPagamentoService(new FormaPagamentoRepository($pdo), $tipoRepo);
         $this->caixaService = new CaixaService(new CaixaRepository($pdo));
     }
 
@@ -41,7 +43,7 @@ class PdvController
             'pageTitle' => 'PDV — Ponto de Venda',
             'produtos'  => $this->produtoService->listarParaPdv(),
             'empresas'  => $this->empresaService->listarAtivas(),
-            'tiposPagamento' => $this->tipoPagamentoService->listarAtivos(),
+            'tiposPagamento' => $this->formaPagamentoService->listarAtivas(),
             'caixa' => $caixa,
             'caixaResumo' => $caixa ? $this->caixaService->resumo($caixa) : null,
             'caixaOperacoes' => $caixa ? $this->caixaService->operacoes($caixa) : [],
@@ -67,12 +69,19 @@ class PdvController
 
         $forma         = $data['forma_pagamento'] ?? 'dinheiro';
         $formasValidas = array_map(
-            fn ($tipo) => $tipo->codigo,
-            $this->tipoPagamentoService->listarAtivos()
+            fn ($formaPagamento) => $formaPagamento->codigo,
+            $this->formaPagamentoService->listarAtivas()
         );
 
         if (!in_array($forma, $formasValidas, true)) {
             jsonResponse(['ok' => false, 'erro' => 'Forma de pagamento inválida.'], 400);
+        }
+
+        foreach (($data['pagamentos'] ?? []) as $pagamento) {
+            $formaPagamento = (string) ($pagamento['forma_pagamento'] ?? '');
+            if ($formaPagamento !== '' && !in_array($formaPagamento, $formasValidas, true)) {
+                jsonResponse(['ok' => false, 'erro' => 'Forma de pagamento invalida.'], 400);
+            }
         }
 
         $result = $this->vendaService->processar(
@@ -83,6 +92,7 @@ class PdvController
             usuarioId:      auth()['id'],
             empresaId:      (int)($data['empresa_id']    ?? 0),
             caixaId:        $caixa->id,
+            pagamentosInput: $data['pagamentos'] ?? [],
         );
 
         jsonResponse($result, $result['ok'] ? 200 : 422);

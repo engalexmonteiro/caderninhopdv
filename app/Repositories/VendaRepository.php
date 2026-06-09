@@ -4,6 +4,7 @@ namespace App\Repositories;
 
 use App\Models\Venda;
 use App\Models\VendaItem;
+use App\Models\VendaPagamento;
 use PDO;
 
 class VendaRepository
@@ -127,6 +128,12 @@ class VendaRepository
         $stmt->execute([$id]);
         $venda->itens = array_map([VendaItem::class, 'fromArray'], $stmt->fetchAll());
 
+        $stmt = $this->pdo->prepare(
+            'SELECT * FROM venda_pagamentos WHERE venda_id = ? ORDER BY id ASC'
+        );
+        $stmt->execute([$id]);
+        $venda->pagamentos = array_map([VendaPagamento::class, 'fromArray'], $stmt->fetchAll());
+
         return $venda;
     }
 
@@ -166,6 +173,17 @@ class VendaRepository
                 ]);
             }
 
+            $stmtPagamento = $this->pdo->prepare(
+                'INSERT INTO venda_pagamentos (venda_id, forma_pagamento, valor) VALUES (?,?,?)'
+            );
+            foreach ($venda->pagamentos as $pagamento) {
+                $stmtPagamento->execute([
+                    $vendaId,
+                    $pagamento->formaPagamento,
+                    $pagamento->valor,
+                ]);
+            }
+
             $this->pdo->commit();
             return $vendaId;
 
@@ -183,13 +201,33 @@ class VendaRepository
         self::$schemaChecked = true;
 
         $column = $this->pdo->query("SHOW COLUMNS FROM vendas LIKE 'forma_pagamento'")->fetch();
-        if ($column && str_starts_with(strtolower((string) $column['Type']), 'enum(')) {
-            $this->pdo->exec("ALTER TABLE vendas MODIFY forma_pagamento VARCHAR(50) NOT NULL DEFAULT 'dinheiro'");
+        if ($column) {
+            $type = strtolower((string) $column['Type']);
+            if (str_starts_with($type, 'enum(') || $type !== 'varchar(80)') {
+                $this->pdo->exec("ALTER TABLE vendas MODIFY forma_pagamento VARCHAR(80) NOT NULL DEFAULT 'dinheiro'");
+            }
         }
 
         $column = $this->pdo->query("SHOW COLUMNS FROM vendas LIKE 'caixa_id'")->fetch();
         if (!$column) {
             $this->pdo->exec('ALTER TABLE vendas ADD COLUMN caixa_id INT NULL AFTER empresa_id');
         }
+
+        $this->pdo->exec("CREATE TABLE IF NOT EXISTS venda_pagamentos (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            venda_id INT NOT NULL,
+            forma_pagamento VARCHAR(80) NOT NULL,
+            valor DECIMAL(10,2) NOT NULL DEFAULT 0.00,
+            criado_em DATETIME DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (venda_id) REFERENCES vendas(id)
+        )");
+
+        $this->pdo->exec(
+            "INSERT INTO venda_pagamentos (venda_id, forma_pagamento, valor)
+             SELECT v.id, v.forma_pagamento, v.total
+             FROM vendas v
+             LEFT JOIN venda_pagamentos vp ON vp.venda_id = v.id
+             WHERE vp.id IS NULL"
+        );
     }
 }
